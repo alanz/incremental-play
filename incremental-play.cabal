@@ -1,0 +1,48 @@
+name:                incremental-play
+version:             0.1.0.0
+synopsis:            Playing with incremental parsing
+-- description:         
+homepage:            https://github.com/alanz/incremental-play
+license:             GPL-3
+license-file:        LICENSE
+author:              Alan Zimmerman
+maintainer:          alan.zimm@gmail.com
+-- copyright:           
+category:            Development
+build-type:          Simple
+extra-source-files:  ChangeLog.md, README.md
+cabal-version:       >=1.10
+
+library
+  -- exposed-modules:     
+  -- other-modules:       
+  -- other-extensions:    
+  build-depends:       base >=4.9 && <4.11
+  ghc-options:            -Wall
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable main
+  main-is:                Main.hs
+  -- Other-Modules:          Paths_HaRe
+  ghc-options:            -Wall
+  hs-source-dirs:
+    ./app
+  build-depends:          base >= 4.9  && < 4.11
+
+-- test-suite spec
+--   type:
+--       exitcode-stdio-1.0
+--   ghc-options:
+--       -Wall
+--   main-is:
+--       Main.hs
+--   hs-source-dirs:
+--     test
+--   other-modules:
+--   build-depends:
+--       base        >= 4.9  && < 4.11
+
+source-repository head
+  type:     git
+  location: https://github.com/alanz/incremental-play.git
