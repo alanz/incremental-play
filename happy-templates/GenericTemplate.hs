@@ -175,8 +175,48 @@ happyDoAction inp tk st
                 action
                  | check     = indexShortOffAddr happyTable off_i
                  | otherwise = indexShortOffAddr happyDefActions st
-        _ -> error "Need to deal with Non-terminal input"
+        NonTerminal tree ->
+          DEBUG_TRACE("state: " ++ show IBOX(st) ++
+                      ",\ttree: TBD" ++
+                      ",\taction: ")
+          (performAllReductionsPossible (next_terminal) tk st)
 
+next_terminal = Terminal (ILIT(0))
+
+performAllReductionsPossible :: Input HappyAbsSynType-> Token
+              -> FAST_INT -- ^ Current state
+              -> Happy_IntList -> HappyStk HappyAbsSynType -- Current state and shifted item stack
+              -> [HappyInput] -- Input being processed
+              -> HappyIdentity HappyAbsSynType
+performAllReductionsPossible inp tk st
+    = case inp of
+        Terminal i ->
+          DEBUG_TRACE("reduceAll:state: " ++ show IBOX(st) ++
+                      ",\ttoken: " ++ show IBOX(i) ++
+                      ",\taction: ")
+          case action of
+                ILIT(0)           -> DEBUG_TRACE("fail.\n")
+                                     happyFail (happyExpListPerState (IBOX(st) :: Int)) i tk st
+                ILIT(-1)          -> DEBUG_TRACE("accept.\n")
+                                     happyAccept i tk st
+                n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce (rule " ++ show rule
+                                                               ++ ")")
+                                                   (happyReduceArr Happy_Data_Array.! rule) i tk st
+                                                   where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
+                n                 -> DEBUG_TRACE("shift, enter state "
+                                                 ++ show IBOX(new_state)
+                                                 ++ "\n")
+                                     happyShift new_state inp tk st
+                                     where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
+          where off    = indexShortOffAddr happyActOffsets st
+                off_i  = PLUS(off,i)
+                check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
+                         then EQ(indexShortOffAddr happyCheck off_i, i)
+                         else False
+                action
+                 | check     = indexShortOffAddr happyTable off_i
+                 | otherwise = indexShortOffAddr happyDefActions st
+        NonTerminal _tree -> error "performAllReductionsPossible NonTerminal"
 #endif /* HAPPY_INCR */
 
 

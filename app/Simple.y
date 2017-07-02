@@ -25,7 +25,8 @@ eos : { () }
 
 tree : Top { $1 }
 
-Top   : 'A' 'B'  { Top TA TB }
+Top   : 'A' 'B'      { Top TASingle TB }
+      | 'A' 'A' 'B'  { Top TADouble TB }
 
 
 
@@ -39,7 +40,7 @@ data Top
       = Top TA TB
       deriving Show
 
-data TA = TA
+data TA = TASingle | TADouble
       deriving Show
 
 data TB = TB
