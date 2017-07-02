@@ -20,8 +20,8 @@ import qualified Data.Bits as Bits
 
 Ultraroot : bos tree eos { $2 }
 
-bos : { undefined }
-eos : { undefined }
+bos : { () }
+eos : { () }
 
 tree : Top { $1 }
 
@@ -30,7 +30,7 @@ Top   : 'A' 'B'  { Top TA TB }
 
 
 {
-parseError :: [Token] -> a
+parseError :: [t] -> a
 parseError _ = error "Parse error"
 
 -- -------------------------------------
@@ -54,13 +54,13 @@ data Token
       | TokenC
  deriving Show
 
-lexer :: String -> [Token]
+lexer :: String -> [HappyInput]
 lexer [] = []
 lexer (c:cs)
       | isSpace c = lexer cs
-lexer ('A':cs) = TokenA : lexer cs
-lexer ('B':cs) = TokenB : lexer cs
-lexer ('C':cs) = TokenC : lexer cs
+lexer ('A':cs) = InputToken TokenA : lexer cs
+lexer ('B':cs) = InputToken TokenB : lexer cs
+lexer ('C':cs) = InputToken TokenC : lexer cs
 
 
 -- Main entry point
