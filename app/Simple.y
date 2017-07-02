@@ -18,6 +18,13 @@ import qualified Data.Bits as Bits
 
 %%
 
+Ultraroot : bos tree eos { $2 }
+
+bos : { undefined }
+eos : { undefined }
+
+tree : Top { $1 }
+
 Top   : 'A' 'B'  { Top TA TB }
 
 

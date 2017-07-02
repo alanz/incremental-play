@@ -29,6 +29,7 @@ executable main
   hs-source-dirs:
     ./app
   build-depends:          base >= 4.9  && < 4.11
+                        , happy == 1.20.*
 
 -- test-suite spec
 --   type:

@@ -7,3 +7,5 @@
 /ExprSimple.info
 /app/Simple.1.hs
 /LICENSE.save0
+/.projectile
+/happy-templates/HappyTemplate-incremental-ghc-debug
