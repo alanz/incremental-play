@@ -1,7 +1,10 @@
 {
 -- This file is (initially) based on the example in happy manual
 -- https://www.haskell.org/happy/doc/html/sec-using.html
-module Main where
+module ExprSimple where
+
+import Data.Char
+import qualified Data.Bits as Bits
 }
 
 %name calc
@@ -17,8 +20,21 @@ module Main where
 
 %%
 
-Exp   : Exp '+' Term           { Plus $1 $3 }
-      | Exp '-' Term           { Minus $1 $3 }
+-- -------------------------------------
+
+-- This next section should become automatic, in time
+
+Ultraroot : bos tree eos { $2 }
+
+bos : { () }
+eos : { () }
+
+tree : Exp { $1 }
+
+-- -------------------------------------
+
+Exp   : Exp '+' Term            { Plus $1 $3 }
+      | Exp '-' Term            { Minus $1 $3 }
       | Term                    { Term $1 }
 
 Term  : Term '*' Factor         { Times $1 $3 }
@@ -30,7 +46,7 @@ Factor
 
 
 {
-parseError :: [Token] -> a
+parseError :: [t] -> a
 parseError _ = error "Parse error"
 
 data Exp
@@ -42,6 +58,7 @@ data Exp
 data Term
       = Times Term Factor
       | Div Term Factor
+      | Factor Factor
       deriving Show
 
 data Factor
@@ -56,20 +73,21 @@ data Token
       | TokenDiv
  deriving Show
 
-lexer :: String -> [Token]
+lexer :: String -> [HappyInput]
 lexer [] = []
 lexer (c:cs)
       | isSpace c = lexer cs
       | isDigit c = lexNum (c:cs)
-lexer ('+':cs) = TokenPlus : lexer cs
-lexer ('-':cs) = TokenMinus : lexer cs
-lexer ('*':cs) = TokenTimes : lexer cs
-lexer ('/':cs) = TokenDiv : lexer cs
+lexer ('+':cs) = InputToken TokenPlus : lexer cs
+lexer ('-':cs) = InputToken TokenMinus : lexer cs
+lexer ('*':cs) = InputToken TokenTimes : lexer cs
+lexer ('/':cs) = InputToken TokenDiv : lexer cs
+lexer (unk:cs) = error $ "lexer failure on char " ++ show unk
 
-lexNum cs = TokenInt (read num) : lexer rest
+lexNum cs = InputToken (TokenInt (read num)) : lexer rest
       where (num,rest) = span isDigit cs
 
 -- Main entry point. "calc" is the parser entry point generated above
-main = getContents >>= print . calc . lexer
+/* main = getContents >>= print . calc . lexer */
 
 }

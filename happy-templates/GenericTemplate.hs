@@ -103,7 +103,7 @@ infixr 9 `HappyStk`
 data HappyStk a = HappyStk a (HappyStk a)
 
 -- AZ: following to come out of happy ProduceCode
-type HappyAbsSynType = HappyAbsSyn Top () () Top Top
+type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
 
 type HappyInput = ParserInput HappyAbsSynType
 
