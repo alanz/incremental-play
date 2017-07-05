@@ -81,8 +81,8 @@ data Happy_IntList = HappyCons FAST_INT Happy_IntList
 #define MK_TOKEN(x)         (happyInTok (x))
 #elif defined(HAPPY_INCR)
 #define GET_ERROR_TOKEN(x)  (case x of { Node { here = HappyErrorToken IBOX(i)} -> i} )
-#define MK_ERROR_TOKEN(i)   (mkNode (HappyErrorToken IBOX(i)))
-#define MK_TOKEN(x)         (mkNode (HappyTerminal (x)))
+#define MK_ERROR_TOKEN(i)   (mkNode (HappyErrorToken IBOX(i)) [])
+#define MK_TOKEN(x)         (mkNode (HappyTerminal (x)) [])
 #else
 #define GET_ERROR_TOKEN(x)  (case x of { HappyErrorToken IBOX(i) -> i })
 #define MK_ERROR_TOKEN(i)   (HappyErrorToken IBOX(i))
@@ -128,12 +128,12 @@ data DoACtionMode = Normal | AllReductions
 
 -- NOTE: First pass, simplest thing that could possibly work.
 data Node a = Node
-  { here         :: a
-  , children     :: [a]
-  , changedLocal :: Bool
-  , changedChild :: Bool -- ^set if any of the children have a change
-  }
-mkNode x = Node { here = x, children = [], changedLocal = False, changedChild = False }
+  { here         :: !a
+  , children     :: ![Node a]
+  , changedLocal :: !Bool
+  , changedChild :: !Bool -- ^set if any of the children have a change
+  } deriving Show
+mkNode x cs = Node { here = x, children = cs, changedLocal = False, changedChild = False }
 #else
 mkNode = id
 #endif /* defined HAPPY_INCR */
