@@ -4,6 +4,7 @@
 module Simple where
 
 import Data.Char
+import Data.List
 import qualified Data.Bits as Bits
 }
 

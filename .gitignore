@@ -10,3 +10,4 @@
 /.projectile
 /happy-templates/HappyTemplate-incremental-ghc-debug
 /app/Simple.hs
+/app/ExprSimple.hs

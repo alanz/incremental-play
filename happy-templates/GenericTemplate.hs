@@ -112,6 +112,8 @@ data HappyStk a = HappyStk a (HappyStk a)
 -- AZ: following to come out of happy ProduceCode
 type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
 
+instance Pretty HappyAbsSynType
+
 type HappyInput = ParserInput HappyAbsSynType
 
 data DoACtionMode = Normal | AllReductions
@@ -128,11 +130,16 @@ data DoACtionMode = Normal | AllReductions
 
 -- NOTE: First pass, simplest thing that could possibly work.
 data Node a = Node
-  { here         :: !a
-  , children     :: ![Node a]
-  , changedLocal :: !Bool
+  { changedLocal :: !Bool
   , changedChild :: !Bool -- ^set if any of the children have a change
+  , here         :: !a
+  , children     :: ![Node a]
   } deriving Show
+-- instance (Show a) => Show (Node a) where
+--   show (Node cl cc h cs) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs]
+instance (Show a, Pretty a) => Pretty (Node a) where
+  pretty (Node cl cc h cs) = pretty "Node" <+> pretty cl <+> pretty cc <> line <> indent 3 (pretty h) <> line <> (indent 4 (pretty cs))
+
 mkNode x cs = Node { here = x, children = cs, changedLocal = False, changedChild = False }
 #else
 mkNode = id

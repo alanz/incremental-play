@@ -4,7 +4,9 @@
 module ExprSimple where
 
 import Data.Char
+import Data.List
 import qualified Data.Bits as Bits
+import Data.Text.Prettyprint.Doc
 }
 
 %name calc
@@ -72,6 +74,8 @@ data Token
       | TokenTimes
       | TokenDiv
  deriving Show
+
+
 
 lexer :: String -> [HappyInput]
 lexer [] = []
