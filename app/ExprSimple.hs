@@ -28,10 +28,6 @@ data HappyAbsSyn t4 t5 t6 t7 t8 t9 t10
 	| HappyAbsSyn9 t9
 	| HappyAbsSyn10 t10
 
-
--- array (4,10) [(4,Nothing),(5,Nothing),(6,Nothing),(7,Nothing),(8,Nothing),(9,Nothing),(10,Nothing)]
-
-
 happyExpList :: HappyAddr
 happyExpList = HappyA# "\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x18\x00\x60\x00\x00\x00\x00\x00\x04\x00\x04\x00\x04\x00\x04\x00\x00\x00\x60\x00\x60\x00\x00\x00\x00\x00\x00"#
 
@@ -82,85 +78,85 @@ happy_n_nonterms = 7 :: Int
 
 happyReduce_1 am = happySpecReduce_3  am 0# happyReduction_1
 happyReduction_1 _
-	(HappyAbsSyn7  happy_var_2)
+	(Node {here = (HappyAbsSyn7  happy_var_2)})
 	_
-	 =  HappyAbsSyn4
+	 =  mkNode (HappyAbsSyn4
 		 (happy_var_2
-	)
+	))
 happyReduction_1 _ _ _  = notHappyAtAll 
 
 happyReduce_2 am = happySpecReduce_0  am 1# happyReduction_2
-happyReduction_2  =  HappyAbsSyn5
+happyReduction_2  =  mkNode (HappyAbsSyn5
 		 (()
-	)
+	))
 
 happyReduce_3 am = happySpecReduce_0  am 2# happyReduction_3
-happyReduction_3  =  HappyAbsSyn6
+happyReduction_3  =  mkNode (HappyAbsSyn6
 		 (()
-	)
+	))
 
 happyReduce_4 am = happySpecReduce_1  am 3# happyReduction_4
-happyReduction_4 (HappyAbsSyn8  happy_var_1)
-	 =  HappyAbsSyn7
+happyReduction_4 (Node {here = (HappyAbsSyn8  happy_var_1)})
+	 =  mkNode (HappyAbsSyn7
 		 (happy_var_1
-	)
+	))
 happyReduction_4 _  = notHappyAtAll 
 
 happyReduce_5 am = happySpecReduce_3  am 4# happyReduction_5
-happyReduction_5 (HappyAbsSyn9  happy_var_3)
+happyReduction_5 (Node {here = (HappyAbsSyn9  happy_var_3)})
 	_
-	(HappyAbsSyn8  happy_var_1)
-	 =  HappyAbsSyn8
+	(Node {here = (HappyAbsSyn8  happy_var_1)})
+	 =  mkNode (HappyAbsSyn8
 		 (Plus happy_var_1 happy_var_3
-	)
+	))
 happyReduction_5 _ _ _  = notHappyAtAll 
 
 happyReduce_6 am = happySpecReduce_3  am 4# happyReduction_6
-happyReduction_6 (HappyAbsSyn9  happy_var_3)
+happyReduction_6 (Node {here = (HappyAbsSyn9  happy_var_3)})
 	_
-	(HappyAbsSyn8  happy_var_1)
-	 =  HappyAbsSyn8
+	(Node {here = (HappyAbsSyn8  happy_var_1)})
+	 =  mkNode (HappyAbsSyn8
 		 (Minus happy_var_1 happy_var_3
-	)
+	))
 happyReduction_6 _ _ _  = notHappyAtAll 
 
 happyReduce_7 am = happySpecReduce_1  am 4# happyReduction_7
-happyReduction_7 (HappyAbsSyn9  happy_var_1)
-	 =  HappyAbsSyn8
+happyReduction_7 (Node {here = (HappyAbsSyn9  happy_var_1)})
+	 =  mkNode (HappyAbsSyn8
 		 (Term happy_var_1
-	)
+	))
 happyReduction_7 _  = notHappyAtAll 
 
 happyReduce_8 am = happySpecReduce_3  am 5# happyReduction_8
-happyReduction_8 (HappyAbsSyn10  happy_var_3)
+happyReduction_8 (Node {here = (HappyAbsSyn10  happy_var_3)})
 	_
-	(HappyAbsSyn9  happy_var_1)
-	 =  HappyAbsSyn9
+	(Node {here = (HappyAbsSyn9  happy_var_1)})
+	 =  mkNode (HappyAbsSyn9
 		 (Times happy_var_1 happy_var_3
-	)
+	))
 happyReduction_8 _ _ _  = notHappyAtAll 
 
 happyReduce_9 am = happySpecReduce_3  am 5# happyReduction_9
-happyReduction_9 (HappyAbsSyn10  happy_var_3)
+happyReduction_9 (Node {here = (HappyAbsSyn10  happy_var_3)})
 	_
-	(HappyAbsSyn9  happy_var_1)
-	 =  HappyAbsSyn9
+	(Node {here = (HappyAbsSyn9  happy_var_1)})
+	 =  mkNode (HappyAbsSyn9
 		 (Div happy_var_1 happy_var_3
-	)
+	))
 happyReduction_9 _ _ _  = notHappyAtAll 
 
 happyReduce_10 am = happySpecReduce_1  am 5# happyReduction_10
-happyReduction_10 (HappyAbsSyn10  happy_var_1)
-	 =  HappyAbsSyn9
+happyReduction_10 (Node {here = (HappyAbsSyn10  happy_var_1)})
+	 =  mkNode (HappyAbsSyn9
 		 (Factor happy_var_1
-	)
+	))
 happyReduction_10 _  = notHappyAtAll 
 
 happyReduce_11 am = happySpecReduce_1  am 6# happyReduction_11
-happyReduction_11 (HappyTerminal (TokenInt happy_var_1))
-	 =  HappyAbsSyn10
+happyReduction_11 (Node {here = (HappyTerminal (TokenInt happy_var_1))})
+	 =  mkNode (HappyAbsSyn10
 		 (Int happy_var_1
-	)
+	))
 happyReduction_11 _  = notHappyAtAll 
 
 happyNewToken action sts stk [] =
@@ -211,7 +207,7 @@ happyReturn1 = \a tks -> (return) a
 happyError' :: () => ([(ParserInput HappyAbsSynType)], [String]) -> HappyIdentity a
 happyError' = HappyIdentity . (\(tokens, _) -> parseError tokens)
 calc tks = happyRunIdentity happySomeParser where
- happySomeParser = happyThen (happyParse 0# tks) (\x -> case x of {HappyAbsSyn4 z -> happyReturn z; _other -> notHappyAtAll })
+ happySomeParser = happyThen (happyParse 0# tks) (\x -> case x of {Node { here = HappyAbsSyn4 z } -> happyReturn z; _other -> notHappyAtAll })
 
 happySeq = happyDontSeq
 
@@ -332,7 +328,7 @@ lexNum cs = InputToken (TokenInt (read num)) : lexer rest
 
 
 {-# LINE 12 "<command-line>" #-}
-{-# LINE 1 "/tmp/ghc12600_0/ghc_2.h" #-}
+{-# LINE 1 "/tmp/ghc8305_0/ghc_2.h" #-}
 
 
 
@@ -1863,9 +1859,9 @@ data Happy_IntList = HappyCons Happy_GHC_Exts.Int# Happy_IntList
 
 
 
-{-# LINE 74 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 77 "happy-templates/GenericTemplate.hs" #-}
 
-{-# LINE 84 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 91 "happy-templates/GenericTemplate.hs" #-}
 
 
 
@@ -1896,9 +1892,30 @@ data DoACtionMode = Normal | AllReductions
                   deriving Eq
 
 -----------------------------------------------------------------------------
+
+
+
+-- | A Nod stores the components of the parse tree as it is built. It is
+-- versioned, and provides the basis for the re-use of prior parse information
+-- when incremental changes occur.
+-- It is parameterised by the HappyAbsSynType
+
+-- NOTE: First pass, simplest thing that could possibly work.
+data Node a = Node
+  { here         :: a
+  , children     :: [a]
+  , changedLocal :: Bool
+  , changedChild :: Bool -- ^set if any of the children have a change
+  }
+mkNode x = Node { here = x, children = [], changedLocal = False, changedChild = False }
+
+
+
+
+-----------------------------------------------------------------------------
 -- starting the parse
 
-happyParse :: Happy_GHC_Exts.Int# -> [HappyInput] -> HappyIdentity HappyAbsSynType
+happyParse :: Happy_GHC_Exts.Int# -> [HappyInput] -> HappyIdentity ((Node (HappyAbsSynType)))
 happyParse start_state = happyNewToken start_state notHappyAtAll notHappyAtAll
 
 -----------------------------------------------------------------------------
@@ -1939,9 +1956,9 @@ data ParserInput a
 happyDoAction :: DoACtionMode
               -> Input HappyAbsSynType-> Token
               -> Happy_GHC_Exts.Int# -- ^ Current state
-              -> Happy_IntList -> HappyStk HappyAbsSynType -- Current state and shifted item stack
+              -> Happy_IntList -> HappyStk ((Node (HappyAbsSynType))) -- Current state and shifted item stack
               -> [HappyInput] -- Input being processed
-              -> HappyIdentity HappyAbsSynType
+              -> HappyIdentity ((Node (HappyAbsSynType)))
 happyDoAction mode inp tk st
   = case mode of
     Normal ->
@@ -1983,9 +2000,9 @@ next_terminal = Terminal (0#)
 
 performAllReductionsPossible :: Input HappyAbsSynType-> Token
               -> Happy_GHC_Exts.Int# -- ^ Current state
-              -> Happy_IntList -> HappyStk HappyAbsSynType -- Current state and shifted item stack
+              -> Happy_IntList -> HappyStk ((Node (HappyAbsSynType))) -- Current state and shifted item stack
               -> [HappyInput] -- Input being processed
-              -> HappyIdentity HappyAbsSynType
+              -> HappyIdentity ((Node (HappyAbsSynType)))
 performAllReductionsPossible inp tk st
     = case inp of
         Terminal i ->
@@ -2021,7 +2038,7 @@ performAllReductionsPossible inp tk st
 -----------------------------------------------------------------------------
 -- Arrays only: do the next action
 
-{-# LINE 269 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 297 "happy-templates/GenericTemplate.hs" #-}
 
 
 indexShortOffAddr (HappyA# arr) off =
@@ -2051,7 +2068,7 @@ data HappyAddr = HappyA# Happy_GHC_Exts.Addr#
 -----------------------------------------------------------------------------
 -- HappyState data type (not arrays)
 
-{-# LINE 309 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 337 "happy-templates/GenericTemplate.hs" #-}
 
 -----------------------------------------------------------------------------
 -- Shifting a token
@@ -2061,29 +2078,29 @@ happyShift :: Happy_GHC_Exts.Int#
            -> Token
            -> Happy_GHC_Exts.Int#
            -> Happy_IntList
-           -> HappyStk HappyAbsSynType
+           -> HappyStk ((Node (HappyAbsSynType)))
            -> [HappyInput]
-           -> HappyIdentity HappyAbsSynType
+           -> HappyIdentity ((Node (HappyAbsSynType)))
 happyShift new_state ((Terminal (0#))) tk st sts stk@(x `HappyStk` _) =
-     let i = (case x of { HappyErrorToken (Happy_GHC_Exts.I# (i)) -> i }) in
+     let i = (case x of { Node { here = HappyErrorToken (Happy_GHC_Exts.I# (i))} -> i} ) in
 --     trace "shifting the error token" $
      happyDoAction Normal ((Terminal (i))) tk new_state (HappyCons (st) (sts)) (stk)
 
 happyShift new_state i tk st sts stk =
-     happyNewToken new_state (HappyCons (st) (sts)) ((HappyTerminal (tk))`HappyStk`stk)
+     happyNewToken new_state (HappyCons (st) (sts)) ((mkNode (HappyTerminal (tk)))`HappyStk`stk)
 
 -- happyReduce is specialised for the common cases.
 
 happySpecReduce_0 :: DoACtionMode
                   -> Happy_GHC_Exts.Int#
-                  -> HappyAbsSynType
+                  -> (Node (HappyAbsSynType))
                   -> Happy_GHC_Exts.Int#
                   -> Token
                   -> Happy_GHC_Exts.Int#
                   -> Happy_IntList
-                  -> HappyStk HappyAbsSynType
+                  -> HappyStk ((Node (HappyAbsSynType)))
                   -> [HappyInput]
-                  -> HappyIdentity HappyAbsSynType
+                  -> HappyIdentity ((Node (HappyAbsSynType)))
 happySpecReduce_0 am i fn 0# tk st sts stk
      = happyFail [] 0# tk st sts stk
 happySpecReduce_0 am nt fn j tk st@((action)) sts stk
@@ -2091,14 +2108,14 @@ happySpecReduce_0 am nt fn j tk st@((action)) sts stk
 
 happySpecReduce_1 :: DoACtionMode
                   -> Happy_GHC_Exts.Int#
-                  -> (HappyAbsSynType -> HappyAbsSynType)
+                  -> ((Node (HappyAbsSynType)) -> (Node (HappyAbsSynType)))
                   -> Happy_GHC_Exts.Int#
                   -> Token
                   -> Happy_GHC_Exts.Int#
                   -> Happy_IntList
-                  -> HappyStk HappyAbsSynType
+                  -> HappyStk ((Node (HappyAbsSynType)))
                   -> [HappyInput]
-                  -> HappyIdentity HappyAbsSynType
+                  -> HappyIdentity ((Node (HappyAbsSynType)))
 happySpecReduce_1 am i fn 0# tk st sts stk
      = happyFail [] 0# tk st sts stk
 happySpecReduce_1 am nt fn j tk _ sts@((HappyCons (st@(action)) (_))) (v1`HappyStk`stk')
@@ -2107,14 +2124,14 @@ happySpecReduce_1 am nt fn j tk _ sts@((HappyCons (st@(action)) (_))) (v1`HappyS
 
 happySpecReduce_2 :: DoACtionMode
                   -> Happy_GHC_Exts.Int#
-                  -> (HappyAbsSynType -> HappyAbsSynType -> HappyAbsSynType)
+                  -> ((Node (HappyAbsSynType)) -> (Node (HappyAbsSynType)) -> (Node (HappyAbsSynType)))
                   -> Happy_GHC_Exts.Int#
                   -> Token
                   -> Happy_GHC_Exts.Int#
                   -> Happy_IntList
-                  -> HappyStk HappyAbsSynType
+                  -> HappyStk ((Node (HappyAbsSynType)))
                   -> [HappyInput]
-                  -> HappyIdentity HappyAbsSynType
+                  -> HappyIdentity ((Node (HappyAbsSynType)))
 happySpecReduce_2 am i fn 0# tk st sts stk
      = happyFail [] 0# tk st sts stk
 happySpecReduce_2 am nt fn j tk _ (HappyCons (_) (sts@((HappyCons (st@(action)) (_))))) (v1`HappyStk`v2`HappyStk`stk')
@@ -2123,14 +2140,14 @@ happySpecReduce_2 am nt fn j tk _ (HappyCons (_) (sts@((HappyCons (st@(action)) 
 
 happySpecReduce_3 :: DoACtionMode
                   -> Happy_GHC_Exts.Int#
-                  -> (HappyAbsSynType -> HappyAbsSynType -> HappyAbsSynType -> HappyAbsSynType)
+                  -> ((Node (HappyAbsSynType)) -> (Node (HappyAbsSynType)) -> (Node (HappyAbsSynType)) -> (Node (HappyAbsSynType)))
                   -> Happy_GHC_Exts.Int#
                   -> Token
                   -> Happy_GHC_Exts.Int#
                   -> Happy_IntList
-                  -> HappyStk HappyAbsSynType
+                  -> HappyStk ((Node (HappyAbsSynType)))
                   -> [HappyInput]
-                  -> HappyIdentity HappyAbsSynType
+                  -> HappyIdentity ((Node (HappyAbsSynType)))
 happySpecReduce_3 am i fn 0# tk st sts stk
      = happyFail [] 0# tk st sts stk
 happySpecReduce_3 am nt fn j tk _ (HappyCons (_) ((HappyCons (_) (sts@((HappyCons (st@(action)) (_))))))) (v1`HappyStk`v2`HappyStk`v3`HappyStk`stk')
@@ -2181,16 +2198,16 @@ happyDropStk n (x `HappyStk` xs) = happyDropStk (n Happy_GHC_Exts.-# (1#::Happy_
 
 happyGoto :: DoACtionMode
           -> Happy_GHC_Exts.Int# -> Input HappyAbsSynType -> Token -> Happy_GHC_Exts.Int#
-          -> Happy_IntList -> HappyStk HappyAbsSynType
+          -> Happy_IntList -> HappyStk ((Node (HappyAbsSynType)))
           -> [HappyInput]
-          -> HappyIdentity HappyAbsSynType
+          -> HappyIdentity ((Node (HappyAbsSynType)))
 happyGoto am nt j tk st =
    (happyTrace (", goto state " ++ show (Happy_GHC_Exts.I# (new_state)) ++ "\n")) $
    happyDoAction am j tk new_state
    where off = indexShortOffAddr happyGotoOffsets st
          off_i = (off Happy_GHC_Exts.+# nt)
          new_state = indexShortOffAddr happyTable off_i
-{-# LINE 457 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 485 "happy-templates/GenericTemplate.hs" #-}
 
 -----------------------------------------------------------------------------
 -- Error recovery (0# is the error token)
@@ -2201,11 +2218,11 @@ happyFail :: [String]
           -> Token
           -> Happy_GHC_Exts.Int#
           -> Happy_IntList
-          -> HappyStk HappyAbsSynType
+          -> HappyStk ((Node (HappyAbsSynType)))
           -> [HappyInput]
-          -> HappyIdentity HappyAbsSynType
+          -> HappyIdentity ((Node (HappyAbsSynType)))
 happyFail explist 0# tk old_st _ stk@(x `HappyStk` _) =
-     let i = (case x of { HappyErrorToken (Happy_GHC_Exts.I# (i)) -> i }) in
+     let i = (case x of { Node { here = HappyErrorToken (Happy_GHC_Exts.I# (i))} -> i} ) in
 --      trace "failing" $
         happyError_ explist i ((InputToken (tk)))
 
@@ -2224,7 +2241,7 @@ happyFail  0# tk old_st (HappyCons ((action)) (sts))
 --                       save the old token and carry on.
 happyFail explist i tk (action) sts stk =
 --      trace "entering error recovery" $
-        happyDoAction Normal ((Terminal (0#))) tk action sts ( (HappyErrorToken (Happy_GHC_Exts.I# (i))) `HappyStk` stk)
+        happyDoAction Normal ((Terminal (0#))) tk action sts ( (mkNode (HappyErrorToken (Happy_GHC_Exts.I# (i)))) `HappyStk` stk)
 
 -- Internal happy errors:
 
