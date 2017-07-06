@@ -1,12 +1,14 @@
 {
 -- This file is (initially) based on the example in happy manual
 -- https://www.haskell.org/happy/doc/html/sec-using.html
+{-# LANGUAGE OverloadedStrings #-}
 module ExprSimple where
 
 import Data.Char
 import Data.List
 import qualified Data.Bits as Bits
 import Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc.Render.Terminal
 }
 
 %name calc

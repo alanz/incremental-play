@@ -138,7 +138,7 @@ data Node a = Node
 -- instance (Show a) => Show (Node a) where
 --   show (Node cl cc h cs) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs]
 instance (Show a, Pretty a) => Pretty (Node a) where
-  pretty (Node cl cc h cs) = pretty "Node" <+> pretty cl <+> pretty cc <> line <> indent 3 (pretty h) <> line <> (indent 4 (pretty cs))
+  pretty (Node cl cc h cs) = "Node" <+> pretty cl <+> pretty cc <> line <> indent 3 (pretty h) <> line <> (indent 4 (pretty cs))
 
 mkNode x cs = Node { here = x, children = cs, changedLocal = False, changedChild = False }
 #else
