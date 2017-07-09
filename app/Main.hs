@@ -27,6 +27,8 @@ main = do
 -- main = (print . calc . lexer) "AB"
 -- main = (print . calc . lexer) "1 + 2"
 -- main = (print . pretty . calc . lexer) "1 + 2"
+  -- let is = lexer' "1 + 2"
+  -- putDoc $ pretty is
   let p = (calc . lexer) "1 + 2"
   -- (putDoc . pretty . calc . lexer) "1 + 2"
   putDoc $ pretty p

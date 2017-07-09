@@ -80,17 +80,19 @@ data Token
 
 
 lexer :: String -> [HappyInput]
-lexer [] = []
-lexer (c:cs)
-      | isSpace c = lexer cs
-      | isDigit c = lexNum (c:cs)
-lexer ('+':cs) = InputToken TokenPlus : lexer cs
-lexer ('-':cs) = InputToken TokenMinus : lexer cs
-lexer ('*':cs) = InputToken TokenTimes : lexer cs
-lexer ('/':cs) = InputToken TokenDiv : lexer cs
-lexer (unk:cs) = error $ "lexer failure on char " ++ show unk
+lexer str = [(mkNode (HappyErrorToken (-5)) []) { terminals = lexer' str}]
 
-lexNum cs = InputToken (TokenInt (read num)) : lexer rest
+lexer' [] = []
+lexer' (c:cs)
+      | isSpace c = lexer' cs
+      | isDigit c = lexNum (c:cs)
+lexer' ('+':cs) = mkTok TokenPlus : lexer' cs
+lexer' ('-':cs) = mkTok TokenMinus : lexer' cs
+lexer' ('*':cs) = mkTok TokenTimes : lexer' cs
+lexer' ('/':cs) = mkTok TokenDiv : lexer' cs
+lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
+
+lexNum cs = mkTok (TokenInt (read num)) : lexer' rest
       where (num,rest) = span isDigit cs
 
 -- Main entry point. "calc" is the parser entry point generated above
