@@ -184,6 +184,8 @@ instance Pretty Tok
 
 type HappyInput = Node HappyAbsSynType Tok
 
+mkTokensNode tks = (mkNode (HappyErrorToken (-5)) []) { terminals = tks}
+
 -- old: happyDoAction :: TokenId -> Token -> State -> StateStack -> ItemStack -> [Tokens]
 happyDoAction :: DoACtionMode
               -- -> Input HappyAbsSynType -> Token
@@ -197,7 +199,7 @@ happyDoAction mode la inp@(Node {terminals = toks}) st
   = case mode of
     Normal ->
       case toks of
-        ((Tok i tk):ts) ->
+        (Tok i tk:ts) ->
           DEBUG_TRACE("state: " ++ show IBOX(st) ++
                       ",\ttoken: " ++ show IBOX(i) ++
                       ",\taction: ")
@@ -213,7 +215,7 @@ happyDoAction mode la inp@(Node {terminals = toks}) st
                 n                 -> DEBUG_TRACE("shift, enter state "
                                                  ++ show IBOX(new_state)
                                                  ++ "\n")
-                                     happyShift new_state i inp st
+                                     happyShift new_state i (mkNode (HappyTerminal tk) []) st
                                      where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
           where off    = indexShortOffAddr happyActOffsets st
                 off_i  = PLUS(off,i)
@@ -376,7 +378,7 @@ happySpecReduce_0 :: DoACtionMode
 happySpecReduce_0 am nt fn ERROR_TOK inp st sts stk
      = happyFail [] ERROR_TOK inp st sts stk
 happySpecReduce_0 am nt fn j inp st@(HAPPYSTATE(action)) sts stk
-     = GOTO(action) am j inp st CONS(st,sts) (fn `HappyStk` stk)
+     = GOTO(action) am nt j inp st CONS(st,sts) (fn `HappyStk` stk)
 
 happySpecReduce_1 :: DoACtionMode
                   -> FAST_INT
@@ -392,7 +394,7 @@ happySpecReduce_1 am i fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
 happySpecReduce_1 am nt fn j tk _ sts@(CONS(st@HAPPYSTATE(action),_)) (v1`HappyStk`stk')
      = let r = fn v1 in
-       happySeq r (GOTO(action) am j tk st sts (r `HappyStk` stk'))
+       happySeq r (GOTO(action) am nt j tk st sts (r `HappyStk` stk'))
 
 happySpecReduce_2 :: DoACtionMode
                   -> FAST_INT
@@ -408,7 +410,7 @@ happySpecReduce_2 am i fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
 happySpecReduce_2 am nt fn j tk _ CONS(_,sts@(CONS(st@HAPPYSTATE(action),_))) (v1`HappyStk`v2`HappyStk`stk')
      = let r = fn v1 v2 in
-       happySeq r (GOTO(action) am j tk st sts (r `HappyStk` stk'))
+       happySeq r (GOTO(action) am nt j tk st sts (r `HappyStk` stk'))
 
 happySpecReduce_3 :: DoACtionMode
                   -> FAST_INT
@@ -424,7 +426,7 @@ happySpecReduce_3 am i fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
 happySpecReduce_3 am nt fn j tk _ CONS(_,CONS(_,sts@(CONS(st@HAPPYSTATE(action),_)))) (v1`HappyStk`v2`HappyStk`v3`HappyStk`stk')
      = let r = fn v1 v2 v3 in
-       happySeq r (GOTO(action) am j tk st sts (r `HappyStk` stk'))
+       happySeq r (GOTO(action) am nt j tk st sts (r `HappyStk` stk'))
 
 happyReduce k am i fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
@@ -432,7 +434,7 @@ happyReduce k am nt fn j tk st sts stk
      = case happyDrop MINUS(k,(ILIT(1) :: FAST_INT)) sts of
          sts1@(CONS(st1@HAPPYSTATE(action),_)) ->
                 let r = fn stk in  -- it doesn't hurt to always seq here...
-                happyDoSeq r (GOTO(action) am j tk st1 sts1 r)
+                happyDoSeq r (GOTO(action) am nt j tk st1 sts1 r)
 
 happyMonadReduce :: FAST_INT      -- number of items to remove from stack
                  -> DoACtionMode
@@ -451,7 +453,7 @@ happyMonadReduce k am nt fn j inp st sts stk =
       case happyDrop k CONS(st,sts) of
         sts1@(CONS(st1@HAPPYSTATE(action),_)) ->
           let drop_stk = happyDropStk k stk in
-          happyThen1 (fn sts stk) (\r -> GOTO(action) am j inp st1 sts1 (r `HappyStk` drop_stk))
+          happyThen1 (fn sts stk) (\r -> GOTO(action) am nt j inp st1 sts1 (r `HappyStk` drop_stk))
 
 happyMonad2Reduce k am nt fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
@@ -480,15 +482,16 @@ happyDropStk n (x `HappyStk` xs) = happyDropStk MINUS(n,(ILIT(1)::FAST_INT)) xs
 
 #if defined(HAPPY_INCR)
 happyGoto :: DoACtionMode -- am
+          -> FAST_INT
           -> FAST_INT     -- token int corresponding to the input
           -> HappyInput   -- was tk, now inp
           -> FAST_INT     -- st
           -> Happy_IntList -> HappyStk HappyInput
           -> [HappyInput]
           -> HappyIdentity HappyInput
-happyGoto am nt inp st =
+happyGoto am nt j inp st =
    DEBUG_TRACE(", goto state " ++ show IBOX(new_state) ++ "\n")
-   happyDoAction am nt inp new_state
+   happyDoAction am j inp new_state
    where off = indexShortOffAddr happyGotoOffsets st
          off_i = PLUS(off,nt)
          new_state = indexShortOffAddr happyTable off_i

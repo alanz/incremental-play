@@ -1,0 +1,20 @@
+
+
+
+    Top-level binding with no type signature: bar2 :: IO ()
+*Main> :main
+state: 0,	token: 1,	action: reduce (rule 2), goto state 2
+state: 2,	token: 1,	action: shift, enter state 8
+state: 8,	token: 2,	action: reduce (rule 11), goto state 7
+state: 7,	token: 2,	action: reduce (rule 10), goto state 6
+state: 6,	token: 2,	action: reduce (rule 7), goto state 5
+state: 5,	token: 2,	action: shift, enter state 11
+state: 11,	token: 1,	action: shift, enter state 8
+state: 8,	token: 6,	action: reduce (rule 11), goto state 7
+state: 7,	token: 6,	action: reduce (rule 10), goto state 15
+state: 15,	token: 6,	action: reduce (rule 5), goto state 5
+state: 5,	token: 6,	action: reduce (rule 4), goto state 4
+state: 4,	token: 6,	action: reduce (rule 3), goto state 13
+state: 13,	token: 6,	action: reduce (rule 1), goto state 3
+state: 3,	token: 6,	action: accept.
+Plus (Term (Factor (Int 1))) (Factor (Int 2))
