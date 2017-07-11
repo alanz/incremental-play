@@ -81,7 +81,7 @@ data Happy_IntList = HappyCons FAST_INT Happy_IntList
 #define MK_TOKEN(x)         (happyInTok (x))
 #elif defined(HAPPY_INCR)
 #define GET_ERROR_TOKEN(x)  (case x of { Node { here = HappyErrorToken IBOX(i)} -> i} )
-#define MK_ERROR_TOKEN(i)   (mkNode (HappyErrorToken IBOX(i)) [])
+#define MK_ERROR_TOKEN(i)   (mkNode (HappyErrorToken IBOX(i)) [] )
 #define MK_TOKEN(x)         (mkNode (HappyTerminal (x)) [])
 #else
 #define GET_ERROR_TOKEN(x)  (case x of { HappyErrorToken IBOX(i) -> i })
@@ -101,6 +101,8 @@ happyTrace string expr = Happy_System_IO_Unsafe.unsafePerformIO $ do
 #if defined(HAPPY_INCR)
 #define TOK_ERR_INT ILIT(-10)
 mkTok t = Tok TOK_ERR_INT t
+-- nullTok = Tok TOK_ERR_INT notHappyAtAll
+nullTok = Tok TOK_ERR_INT TokenDiv
 #define TERMINAL(i) (i)
 #define TOKEN(i) ((i))
 #else
@@ -151,15 +153,31 @@ data Node a b = Node
   , here         :: !a
   , children     :: ![Node a b]
   , terminals    :: ![b]
+  , next_terminal :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
   }
 instance (Show a, Show b) => Show (Node a b) where
-  show (Node cl cc h cs ts) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs,show ts]
+  show (Node cl cc h cs ts nt) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs,show ts, show nt]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Node a b) where
-  pretty (Node cl cc h cs ts) = "Node" <+> pretty cl <+> pretty cc <> line <> indent 3 (pretty h)
+  pretty (Node cl cc h cs ts nt) = "Node" <+> pretty cl <+> pretty cc <+> parens (pretty nt)
+           <> line <> (indent 3 (pretty h))
            <> line <> (indent 4 (pretty cs))
            <> line <> (indent 4 (pretty ts))
 
-mkNode x cs = Node { here = x, children = cs, changedLocal = False, changedChild = False, terminals = [] }
+mkNode x cs = Node { here = x
+                   , children = cs
+                   , changedLocal = False, changedChild = False
+                   , terminals = []
+                   , next_terminal = getNextTerminal cs
+                   }
+
+getNextTerminal :: [Node a b] -> Maybe b
+getNextTerminal [] = Nothing
+getNextTerminal cs
+  = case catMaybes (map next_terminal cs) of
+      []     -> Nothing
+      (nt:_) -> Just nt
+
+mkNodeNt x cs nt = (mkNode x cs) { next_terminal = Just nt }
 
 -- data Input a
 --   = Terminal FAST_INT
@@ -184,7 +202,7 @@ instance Pretty Tok
 
 type HappyInput = Node HappyAbsSynType Tok
 
-mkTokensNode tks = (mkNode (HappyErrorToken (-5)) []) { terminals = tks}
+mkTokensNode tks = (mkNode (HappyErrorToken (-5)) [] ) { terminals = tks}
 
 -- old: happyDoAction :: TokenId -> Token -> State -> StateStack -> ItemStack -> [Tokens]
 happyDoAction :: DoACtionMode
@@ -199,7 +217,7 @@ happyDoAction mode la inp@(Node {terminals = toks}) st
   = case mode of
     Normal ->
       case toks of
-        (Tok i tk:ts) ->
+        (tok@(Tok i tk):ts) ->
           DEBUG_TRACE("state: " ++ show IBOX(st) ++
                       ",\ttoken: " ++ show IBOX(i) ++
                       ",\taction: ")
@@ -215,7 +233,7 @@ happyDoAction mode la inp@(Node {terminals = toks}) st
                 n                 -> DEBUG_TRACE("shift, enter state "
                                                  ++ show IBOX(new_state)
                                                  ++ "\n")
-                                     happyShift new_state i (mkNode (HappyTerminal tk) []) st
+                                     happyShift new_state i (mkNodeNt (HappyTerminal tk) [] tok) st
                                      where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
           where off    = indexShortOffAddr happyActOffsets st
                 off_i  = PLUS(off,i)
