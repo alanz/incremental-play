@@ -593,7 +593,9 @@ happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts)
 --                       save the old token and carry on.
 happyFail explist i inp HAPPYSTATE(action) sts stk =
 --      trace "entering error recovery" $
-        DO_ACTION(action,(TERMINAL(ERROR_TOK)),inp,sts, MK_ERROR_TOKEN(i) `HappyStk` stk)
+   -- TODO:AZ: restore the error processing
+        -- DO_ACTION(action,(TERMINAL(ERROR_TOK)),inp,sts, MK_ERROR_TOKEN(i) `HappyStk` stk)
+        happyError_ explist i inp
 
 -- Internal happy errors:
 

@@ -31,17 +31,14 @@ main = do
 -- main = (print . pretty . calc . lexer) "1 + 2"
   -- let is = lexer' "1 + 2"
   -- putDoc $ pretty is
-  let p = (calc . lexer) "1 + 2"
-  -- putDoc $ pretty p
-  -- PP.prettyPrint p
-  -- putStr $ drawTree $ fmap show p
   putStr $ drawTree $ fmap show ptree
 
   putStrLn "--------------------------------"
+  putStr $ drawTree $ fmap show newTree
+  putStrLn "--------------------------------"
 
-  let zipperTree = zipper p
-
-  -- putStr $ show $ zipperTree
+  let p' = calc [newTree]
+  putStr $ drawTree $ fmap show p'
   return ()
 
 ptree = (calc . lexer) "1 + 2"
@@ -70,14 +67,12 @@ newTree =
                & downward branches
                & fromWithin traverse
                & tugs rightward 1
-
                & downward root & focus %~ setChangedChild & upward
 
                & downward root
                -- -- & view focus
                & focus %~ changeVal
                & rezip
--- /show
 
 changeVal :: NodeVal -> NodeVal
 changeVal (Val cl cc h ts nt) = Val True True (HappyErrorToken (-5)) [mkTok TokenMinus ] Nothing
