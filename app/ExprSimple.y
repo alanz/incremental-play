@@ -7,6 +7,7 @@ module ExprSimple where
 import Data.Char
 import Data.Maybe
 import Data.List
+import Data.Tree
 import qualified Data.Bits as Bits
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal
@@ -81,7 +82,7 @@ data Token
 
 
 lexer :: String -> [HappyInput]
-lexer str = [(mkNode (HappyErrorToken (-5)) [] ) { terminals = lexer' str}]
+lexer str = [mkTokensNode (lexer' str)]
 
 lexer' [] = []
 lexer' (c:cs)

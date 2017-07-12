@@ -80,7 +80,7 @@ data Happy_IntList = HappyCons FAST_INT Happy_IntList
 #define MK_ERROR_TOKEN(i)   (Happy_GHC_Exts.unsafeCoerce# IBOX(i))
 #define MK_TOKEN(x)         (happyInTok (x))
 #elif defined(HAPPY_INCR)
-#define GET_ERROR_TOKEN(x)  (case x of { Node { here = HappyErrorToken IBOX(i)} -> i} )
+#define GET_ERROR_TOKEN(x)  (case x of { Node (Val{ here = HappyErrorToken IBOX(i)}) _ -> i} )
 #define MK_ERROR_TOKEN(i)   (mkNode (HappyErrorToken IBOX(i)) [] )
 #define MK_TOKEN(x)         (mkNode (HappyTerminal (x)) [])
 #else
@@ -147,37 +147,55 @@ happyAccept j tk st sts (HappyStk ans _) =
 -- versioned, and provides the basis for the re-use of prior parse information
 -- when incremental changes occur.
 -- It is parameterised by the HappyAbsSynType
-data Node a b = Node
-  { changedLocal :: !Bool
-  , changedChild :: !Bool -- ^set if any of the children have a change
-  , here         :: !a
-  , children     :: ![Node a b]
-  , terminals    :: ![b]
-  , next_terminal :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
-  }
-instance (Show a, Show b) => Show (Node a b) where
-  show (Node cl cc h cs ts nt) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs,show ts, show nt]
+type Node a b = Tree (Val a b)
+-- data Node a b = Node
+--   { changedLocal :: !Bool
+--   , changedChild :: !Bool -- ^set if any of the children have a change
+--   , here         :: !a
+--   , children     :: ![Node a b]
+--   , terminals    :: ![b]
+--   , next_terminal :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
+--   }
+
+-- instance (Show a, Show b) => Show (Node a b) where
+--   show (Node (Val cl cc h ts nt) cs) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs,show ts, show nt]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Node a b) where
-  pretty (Node cl cc h cs ts nt) = "Node" <+> pretty cl <+> pretty cc <+> parens (pretty nt)
+  pretty (Node (Val cl cc h ts nt) cs) = "Node" <+> pretty cl <+> pretty cc <+> parens (pretty nt)
            <> line <> (indent 3 (pretty h))
            <> line <> (indent 4 (pretty cs))
            <> line <> (indent 4 (pretty ts))
 
-mkNode x cs = Node { here = x
-                   , children = cs
-                   , changedLocal = False, changedChild = False
-                   , terminals = []
-                   , next_terminal = getNextTerminal cs
-                   }
+data Val a b = Val
+  { changedLocal :: !Bool
+  , changedChild :: !Bool -- ^set if any of the children have a change
+  , here         :: !a
+  , terminals    :: ![b]
+  , next_terminal :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
+  }
+instance (Show a, Show b) => Show (Val a b) where
+  show (Val cl cc h ts nt) = intercalate " " ["Val",show cl, show cc,"(" ++ show h ++ ")",show ts, show nt]
+instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Val a b) where
+  pretty ((Val cl cc h ts nt) ) = "Val" <+> pretty cl <+> pretty cc <+> parens (pretty nt)
+           <> line <> (indent 3 (pretty h))
+           <> line <> (indent 4 (pretty ts))
+
+mkNode x cs = Node (Val
+                    { here = x
+                    , changedLocal = False, changedChild = False
+                    , terminals = []
+                    , next_terminal = getNextTerminal cs
+                    }) cs
 
 getNextTerminal :: [Node a b] -> Maybe b
 getNextTerminal [] = Nothing
 getNextTerminal cs
-  = case catMaybes (map next_terminal cs) of
+  = case catMaybes (map (next_terminal . rootLabel) cs) of
       []     -> Nothing
       (nt:_) -> Just nt
 
-mkNodeNt x cs nt = (mkNode x cs) { next_terminal = Just nt }
+mkNodeNt x cs nt
+  = let Node v cs' = (mkNode x cs)
+    in Node (v { next_terminal = Just nt }) cs'
 
 -- data Input a
 --   = Terminal FAST_INT
@@ -202,7 +220,13 @@ instance Pretty Tok
 
 type HappyInput = Node HappyAbsSynType Tok
 
-mkTokensNode tks = (mkNode (HappyErrorToken (-5)) [] ) { terminals = tks}
+mkTokensNode tks = setTerminals (mkNode (HappyErrorToken (-5)) []) tks
+
+setTerminals :: Node a b -> [b] -> Node a b
+setTerminals (Node v cs) ts = Node (v { terminals = ts}) cs
+
+getTerminals :: Node a b -> [b]
+getTerminals (Node v cs) = terminals v
 
 -- old: happyDoAction :: TokenId -> Token -> State -> StateStack -> ItemStack -> [Tokens]
 happyDoAction :: DoACtionMode
@@ -213,7 +237,7 @@ happyDoAction :: DoACtionMode
               -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
               -> [HappyInput] -- Input being processed
               -> HappyIdentity HappyInput
-happyDoAction mode la inp@(Node {terminals = toks, next_terminal = mnext}) st
+happyDoAction mode la inp@(Node (Val {terminals = toks, next_terminal = mnext}) _) st
   = case mode of
     Normal ->
       case toks of
@@ -249,7 +273,7 @@ happyDoAction mode la inp@(Node {terminals = toks, next_terminal = mnext}) st
                       ",\taction: ")
           case mnext of
             Just tok@(Tok i _) ->
-              (performAllReductionsPossible i (inp { terminals = [tok]}) st)
+              (performAllReductionsPossible i (setTerminals inp [tok]) st)
             Nothing -> shiftOrBreakdown inp st
     AllReductions -> performAllReductionsPossible ((ILIT(0))) inp st
 
@@ -258,7 +282,7 @@ performAllReductionsPossible :: FAST_INT -> HappyInput
               -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
               -> [HappyInput] -- Input being processed
               -> HappyIdentity HappyInput
-performAllReductionsPossible la inp@(Node {terminals = toks}) st
+performAllReductionsPossible la inp@(Node (Val {terminals = toks}) _) st
     = case toks of
         (Tok i tk:ts) ->
           DEBUG_TRACE("reduceAll:state: " ++ show IBOX(st) ++
@@ -293,7 +317,7 @@ shiftOrBreakdown :: HappyInput
               -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
               -> [HappyInput] -- Input being processed
               -> HappyIdentity HappyInput
-shiftOrBreakdown inp@(Node {terminals = toks}) st
+shiftOrBreakdown inp@(Node (Val {terminals = toks}) _) st
   = error "shiftOrBreakdown"
 
 #endif /* HAPPY_INCR */
