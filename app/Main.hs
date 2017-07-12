@@ -1,25 +1,26 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- import Simple
-import ExprSimple
+import           ExprSimple
 -- import ExprSimpleOrig
--- import Data.Text.Prettyprint.Doc
--- import Data.Text.Prettyprint.Doc.Render.Terminal
 
 import           Control.Applicative
+import           Control.Lens
+import           Control.Zipper
 import           Data.Maybe
 import           Data.Semigroup
-import           Data.Text              (Text)
-import qualified Data.Text              as T
-import qualified Data.Text.Lazy         as TL
+import           Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TLB
-import qualified Data.Text.Lazy.IO      as TL
-import qualified System.Console.ANSI    as ANSI
-import           System.IO              (Handle, stdout)
-
-import Data.Text.Prettyprint.Doc
+import qualified Data.Text.Lazy.IO as TL
+import           Data.Text.Prettyprint.Doc
+import           Data.Tree
+import           Data.Tree.Lens
+import qualified System.Console.ANSI as ANSI
+import           System.IO (Handle, stdout)
 -- import Data.Text.Prettyprint.Doc.Render.Util.Panic
 -- import Data.Text.Prettyprint.Doc.Render.Util.StackMachine
-import Data.Text.Prettyprint.Doc.Render.Terminal
+import           Data.Text.Prettyprint.Doc.Render.Terminal
 import qualified Text.Show.Prettyprint as PP
 
 main :: IO ()
@@ -31,21 +32,60 @@ main = do
   -- let is = lexer' "1 + 2"
   -- putDoc $ pretty is
   let p = (calc . lexer) "1 + 2"
-  putDoc $ pretty p
-  PP.prettyPrint p
+  -- putDoc $ pretty p
+  -- PP.prettyPrint p
+  -- putStr $ drawTree $ fmap show p
+  putStr $ drawTree $ fmap show ptree
+
+  putStrLn "--------------------------------"
+
+  let zipperTree = zipper p
+
+  -- putStr $ show $ zipperTree
   return ()
 
--- foo = do
---   Data.Text.Prettyprint.Doc.Render.Terminal.putDoc (bold "hello" <+> bold "world")
+ptree = (calc . lexer) "1 + 2"
 
-foo = putDoc styledDoc
+zipperTree = zipper ptree
 
--- style = color Green <> bold
-style = bold
-styledDoc = annotate style "hello world"
+foo :: IO ()
+foo = putStrLn $ show $
+-- show
+    -- zipperTree & downward root & view focus
+    newTree
 
-w1 :: Doc AnsiStyle
-w1 = "foo"
+newTree =
+    zipperTree
+               & downward root & focus %~ setChangedChild & upward
 
-bar = renderIO System.IO.stdout (layoutPretty defaultLayoutOptions "hello\nworld")
-bar2 = renderIO System.IO.stdout (layoutPretty defaultLayoutOptions styledDoc)
+               & downward branches
+               & fromWithin traverse
+               & tugs rightward 1 -- HappyAbsSyn7
+               & downward root & focus %~ setChangedChild & upward
+
+               & downward branches
+               & fromWithin traverse
+               & downward root & focus %~ setChangedChild & upward
+
+               & downward branches
+               & fromWithin traverse
+               & tugs rightward 1
+
+               & downward root & focus %~ setChangedChild & upward
+
+               & downward root
+               -- -- & view focus
+               & focus %~ changeVal
+               & rezip
+-- /show
+
+changeVal :: NodeVal -> NodeVal
+changeVal (Val cl cc h ts nt) = Val True True (HappyErrorToken (-5)) [mkTok TokenMinus ] Nothing
+
+setChangedChild :: NodeVal -> NodeVal
+setChangedChild v = v { changedChild = True}
+
+showTree tree = putStrLn $ drawTree $ fmap show tree
+
+bar :: IO String
+bar = fmap rezip $ zipper "stale" & within traverse <&> tugs rightward 2 <&> focus .~ 'y'

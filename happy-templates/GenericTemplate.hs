@@ -116,6 +116,8 @@ data HappyStk a = HappyStk a (HappyStk a)
 -- AZ: following to come out of happy ProduceCode
 type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
 
+type NodeVal = Val HappyAbsSynType Tok
+
 instance Pretty HappyAbsSynType
 
 data DoACtionMode = Normal | AllReductions
@@ -173,7 +175,7 @@ data Val a b = Val
   , next_terminal :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
   }
 instance (Show a, Show b) => Show (Val a b) where
-  show (Val cl cc h ts nt) = intercalate " " ["Val",show cl, show cc,"(" ++ show h ++ ")",show ts, show nt]
+  show (Val cl cc h ts nt) = intercalate " " ["Val",show cl, show cc,"(" ++ show h ++ ")",show ts, "(" ++ show nt ++ ")"]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Val a b) where
   pretty ((Val cl cc h ts nt) ) = "Val" <+> pretty cl <+> pretty cc <+> parens (pretty nt)
            <> line <> (indent 3 (pretty h))
