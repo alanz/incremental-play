@@ -213,7 +213,7 @@ happyDoAction :: DoACtionMode
               -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
               -> [HappyInput] -- Input being processed
               -> HappyIdentity HappyInput
-happyDoAction mode la inp@(Node {terminals = toks}) st
+happyDoAction mode la inp@(Node {terminals = toks, next_terminal = mnext}) st
   = case mode of
     Normal ->
       case toks of
@@ -247,8 +247,10 @@ happyDoAction mode la inp@(Node {terminals = toks}) st
           DEBUG_TRACE("state: " ++ show IBOX(st) ++
                       ",\ttree: TBD" ++
                       ",\taction: ")
-    -- NOTE: ILIT(0) below should be the next_terminal
-          (performAllReductionsPossible ((ILIT(0))) inp st)
+          case mnext of
+            Just tok@(Tok i _) ->
+              (performAllReductionsPossible i (inp { terminals = [tok]}) st)
+            Nothing -> shiftOrBreakdown inp st
     AllReductions -> performAllReductionsPossible ((ILIT(0))) inp st
 
 performAllReductionsPossible :: FAST_INT -> HappyInput
@@ -285,6 +287,15 @@ performAllReductionsPossible la inp@(Node {terminals = toks}) st
                  | check     = indexShortOffAddr happyTable off_i
                  | otherwise = indexShortOffAddr happyDefActions st
         _ -> error "performAllReductionsPossible NonTerminal"
+
+shiftOrBreakdown :: HappyInput
+              -> FAST_INT -- ^ Current state
+              -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
+              -> [HappyInput] -- Input being processed
+              -> HappyIdentity HappyInput
+shiftOrBreakdown inp@(Node {terminals = toks}) st
+  = error "shiftOrBreakdown"
+
 #endif /* HAPPY_INCR */
 
 
