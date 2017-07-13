@@ -1,27 +1,28 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
 -- import Simple
 import           ExprSimple
 -- import ExprSimpleOrig
 
-import           Control.Applicative
+-- import           Control.Applicative
 import           Control.Lens
 import           Control.Zipper
-import           Data.Maybe
-import           Data.Semigroup
-import           Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.Builder as TLB
-import qualified Data.Text.Lazy.IO as TL
-import           Data.Text.Prettyprint.Doc
+-- import           Data.Maybe
+-- import           Data.Semigroup
+-- import           Data.Text (Text)
+-- import qualified Data.Text as T
+-- import qualified Data.Text.Lazy as TL
+-- import qualified Data.Text.Lazy.Builder as TLB
+-- import qualified Data.Text.Lazy.IO as TL
+-- import           Data.Text.Prettyprint.Doc
 import           Data.Tree
 import           Data.Tree.Lens
-import qualified System.Console.ANSI as ANSI
-import           System.IO (Handle, stdout)
+-- import qualified System.Console.ANSI as ANSI
+-- import           System.IO (Handle, stdout)
 -- import Data.Text.Prettyprint.Doc.Render.Util.Panic
 -- import Data.Text.Prettyprint.Doc.Render.Util.StackMachine
-import           Data.Text.Prettyprint.Doc.Render.Terminal
-import qualified Text.Show.Prettyprint as PP
+-- import           Data.Text.Prettyprint.Doc.Render.Terminal
+-- import qualified Text.Show.Prettyprint as PP
 
 main :: IO ()
 main = do
@@ -41,8 +42,10 @@ main = do
   putStr $ drawTree $ fmap show p'
   return ()
 
+ptree :: HappyInput
 ptree = (calc . lexer) "1 + 2"
 
+zipperTree :: Top :>> HappyInput
 zipperTree = zipper ptree
 
 foo :: IO ()
@@ -51,6 +54,7 @@ foo = putStrLn $ show $
     -- zipperTree & downward root & view focus
     newTree
 
+newTree :: Tree NodeVal
 newTree =
     zipperTree
                & downward root & focus %~ setChangedChild & upward
@@ -75,11 +79,12 @@ newTree =
                & rezip
 
 changeVal :: NodeVal -> NodeVal
-changeVal (Val cl cc h ts nt) = Val True True (HappyErrorToken (-5)) [mkTok TokenMinus ] Nothing
+changeVal _ = Val True True (HappyErrorToken (-5)) [mkTok TokenMinus ] Nothing
 
 setChangedChild :: NodeVal -> NodeVal
 setChangedChild v = v { changedChild = True}
 
+showTree :: Show a => Tree a -> IO ()
 showTree tree = putStrLn $ drawTree $ fmap show tree
 
 bar :: IO String
