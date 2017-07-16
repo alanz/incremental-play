@@ -18,3 +18,131 @@ state: 4,	token: 6,	action: reduce (rule 3), goto state 13
 state: 13,	token: 6,	action: reduce (rule 1), goto state 3
 state: 3,	token: 6,	action: accept.
 Plus (Term (Factor (Int 1))) (Factor (Int 2))
+
+-----------------------------------------------------------------------------
+
+
+:main
+state: 0,	token: 1,	action: reduce A (rule 2), goto state 2
+state: 2,	token: 1,	action: not shift, enter state 8
+happyShift:(new_state,i,inp)=(8,1,Node {rootLabel = Val False False (HappyTerminal (TokenInt 1)) [] (Just (Tok 1# (TokenInt 1))) (Nothing), subForest = []})
+state: 8,	token: 2,	action: reduce A (rule 11), goto state 7
+state: 7,	token: 2,	action: reduce A (rule 10), goto state 6
+state: 6,	token: 2,	action: reduce A (rule 7), goto state 5
+state: 5,	token: 2,	action: not shift, enter state 11
+happyShift:(new_state,i,inp)=(11,2,Node {rootLabel = Val False False (HappyTerminal TokenPlus) [] (Just (Tok 2# TokenPlus)) (Nothing), subForest = []})
+state: 11,	token: 1,	action: not shift, enter state 8
+happyShift:(new_state,i,inp)=(8,1,Node {rootLabel = Val False False (HappyTerminal (TokenInt 2)) [] (Just (Tok 1# (TokenInt 2))) (Nothing), subForest = []})
+state: 8,	tree: HappyErrorToken (-5),	action: shift or breakdown.
+state: 8,	token: 6,	action: reduce A (rule 11), goto state 7
+state: 7,	token: 6,	action: reduce A (rule 10), goto state 15
+state: 15,	token: 6,	action: reduce A (rule 5), goto state 5
+state: 5,	token: 6,	action: reduce A (rule 4), goto state 4
+state: 4,	token: 6,	action: reduce A (rule 3), goto state 13
+state: 13,	token: 6,	action: reduce A (rule 1), goto state 3
+state: 3,	token: 6,	action: accept. A
+Val False False (HappyAbsSyn4 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|
++- Val False False (HappyAbsSyn5 ()) [] (Nothing) (Nothing)
+|
++- Val False False (HappyAbsSyn7 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|  |
+|  `- Val False False (HappyAbsSyn8 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 2)))
+|     |
+|     +- Val False False (HappyAbsSyn8 (Term (Factor (Int 1)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |  |
+|     |  `- Val False False (HappyAbsSyn9 (Factor (Int 1))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |     |
+|     |     `- Val False False (HappyAbsSyn10 (Int 1)) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |        |
+|     |        `- Val False False (HappyTerminal (TokenInt 1)) [] (Just (Tok 1# (TokenInt 1))) (Nothing)
+|     |
+|     +- Val False False (HappyTerminal TokenPlus) [] (Just (Tok 2# TokenPlus)) (Nothing)
+|     |
+|     `- Val False False (HappyAbsSyn9 (Factor (Int 2))) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|        |
+|        `- Val False False (HappyAbsSyn10 (Int 2)) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|           |
+|           `- Val False False (HappyTerminal (TokenInt 2)) [] (Just (Tok 1# (TokenInt 2))) (Nothing)
+|
+`- Val False False (HappyAbsSyn6 ()) [] (Nothing) (Nothing)
+--------------------------------
+Val False True (HappyAbsSyn4 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|
++- Val False False (HappyAbsSyn5 ()) [] (Nothing) (Nothing)
+|
++- Val False True (HappyAbsSyn7 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|  |
+|  `- Val False True (HappyAbsSyn8 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 2)))
+|     |
+|     +- Val False False (HappyAbsSyn8 (Term (Factor (Int 1)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |  |
+|     |  `- Val False False (HappyAbsSyn9 (Factor (Int 1))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |     |
+|     |     `- Val False False (HappyAbsSyn10 (Int 1)) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |        |
+|     |        `- Val False False (HappyTerminal (TokenInt 1)) [] (Just (Tok 1# (TokenInt 1))) (Nothing)
+|     |
+|     +- Val True True (HappyErrorToken (-5)) [Tok -10# TokenMinus] (Nothing) (Nothing)
+|     |
+|     `- Val False False (HappyAbsSyn9 (Factor (Int 2))) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|        |
+|        `- Val False False (HappyAbsSyn10 (Int 2)) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|           |
+|           `- Val False False (HappyTerminal (TokenInt 2)) [] (Just (Tok 1# (TokenInt 2))) (Nothing)
+|
+`- Val False False (HappyAbsSyn6 ()) [] (Nothing) (Nothing)
+--------------------------------
+state: 0,	tree: HappyAbsSyn4 (Plus (,	action: left breakdown.
+state: 0,	tree: HappyAbsSyn5 (),	action: shift or breakdown.
+state: 0,	tree: HappyAbsSyn7 (Plus (,	action: left breakdown.
+state: 0,	tree: HappyAbsSyn8 (Plus (,	action: left breakdown.
+state: 0,	tree: HappyAbsSyn8 (Term (,	action: all reductions.
+reduceAll:state: 0,	token: 1,	action: reduce B (rule 2), goto state 2
+reduceAll:state: 2,	token: 1,	action: no shift. 
+state: 2,	token: 1,	action: not shift, enter state 8
+happyShift:(new_state,i,inp)=(8,1,Node {rootLabel = Val False False (HappyTerminal (TokenInt 1)) [] (Just (Tok 1# (TokenInt 1))) (Nothing), subForest = []})
+state: 8,	token: 3,	action: reduce A (rule 11), goto state 7
+state: 7,	token: 3,	action: reduce A (rule 10), goto state 6
+state: 6,	token: 3,	action: reduce A (rule 7), goto state 5
+state: 5,	token: 3,	action: not shift, enter state 12
+happyShift:(new_state,i,inp)=(12,3,Node {rootLabel = Val False False (HappyTerminal TokenMinus) [] (Just (Tok 3# TokenMinus)) (Nothing), subForest = []})
+state: 12,	tree: HappyErrorToken (-5),	action: left breakdown.
+state: 12,	tree: HappyAbsSyn9 (Factor,	action: all reductions.
+reduceAll:state: 12,	token: 1,	action: no shift. 
+state: 12,	token: 1,	action: not shift, enter state 8
+happyShift:(new_state,i,inp)=(8,1,Node {rootLabel = Val False False (HappyTerminal (TokenInt 2)) [] (Just (Tok 1# (TokenInt 2))) (Nothing), subForest = []})
+state: 8,	tree: HappyAbsSyn6 (),	action: shift or breakdown.
+state: 8,	token: 6,	action: reduce A (rule 11), goto state 7
+state: 7,	token: 6,	action: reduce A (rule 10), goto state 14
+state: 14,	token: 6,	action: reduce A (rule 6), goto state 5
+state: 5,	token: 6,	action: reduce A (rule 4), goto state 4
+state: 4,	token: 6,	action: reduce A (rule 3), goto state 13
+state: 13,	token: 6,	action: reduce A (rule 1), goto state 3
+state: 3,	token: 6,	action: accept. A
+Val False False (HappyAbsSyn4 (Minus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|
++- Val False False (HappyAbsSyn5 ()) [] (Nothing) (Nothing)
+|
++- Val False False (HappyAbsSyn7 (Minus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|  |
+|  `- Val False False (HappyAbsSyn8 (Minus (Term (Factor (Int 1))) (Factor (Int 2)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 2)))
+|     |
+|     +- Val False False (HappyAbsSyn8 (Term (Factor (Int 1)))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |  |
+|     |  `- Val False False (HappyAbsSyn9 (Factor (Int 1))) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |     |
+|     |     `- Val False False (HappyAbsSyn10 (Int 1)) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |        |
+|     |        `- Val False False (HappyTerminal (TokenInt 1)) [] (Just (Tok 1# (TokenInt 1))) (Nothing)
+|     |
+|     +- Val False False (HappyTerminal TokenMinus) [] (Just (Tok 3# TokenMinus)) (Nothing)
+|     |
+|     `- Val False False (HappyAbsSyn9 (Factor (Int 2))) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|        |
+|        `- Val False False (HappyAbsSyn10 (Int 2)) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|           |
+|           `- Val False False (HappyTerminal (TokenInt 2)) [] (Just (Tok 1# (TokenInt 2))) (Nothing)
+|
+`- Val False False (HappyAbsSyn6 ()) [] (Nothing) (Nothing)
+*Main> :r

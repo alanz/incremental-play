@@ -156,7 +156,8 @@ type Node a b = Tree (Val a b)
 -- instance (Show a, Show b) => Show (Node a b) where
 --   show (Node (Val cl cc h ts nt) cs) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs,show ts, show nt]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Node a b) where
-  pretty (Node (Val cl cc h ts nt lt) cs) = "Node" <+> pretty cl <+> pretty cc <+> parens (pretty nt) <+> parens (pretty lt)
+  pretty (Node (Val cl cc h hnt ts nt lt) cs) = "Node" <+> pretty cl <+> pretty cc <+> parens (pretty nt) <+> parens (pretty lt)
+    <+> parens (pretty hnt)
            <> line <> (indent 3 (pretty h))
            <> line <> (indent 4 (pretty cs))
            <> line <> (indent 4 (pretty ts))
@@ -165,21 +166,25 @@ data Val a b = Val
   { changedLocal  :: !Bool
   , changedChild  :: !Bool -- ^set if any of the children have a change
   , here          :: !a
+  , here_nt       :: !(Maybe Int)
   , terminals     :: ![b]
   , next_terminal :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
   , last_terminal :: !(Maybe b)  -- ^ the rightmost terminal of the yield of the tree
   }
 instance (Show a, Show b) => Show (Val a b) where
-  show (Val cl cc h ts nt lt) = unwords ["Val",show cl, show cc,"(" ++ show h ++ ")",show ts
-                                        , "(" ++ show nt ++ ")", "(" ++ show lt ++ ")"]
+  show (Val cl cc h hnt ts nt lt)
+    = unwords ["Val",show cl, show cc,"(" ++ show h ++ ")"
+              ,"(" ++ show hnt ++ ")",show ts
+              , "(" ++ show nt ++ ")", "(" ++ show lt ++ ")"]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Val a b) where
-  pretty ((Val cl cc h ts nt lt) )
-    = "Val" <+> pretty cl <+> pretty cc <+> parens (pretty nt) <+> parens (pretty lt)
+  pretty ((Val cl cc h hnt ts nt lt) )
+    = "Val" <+> pretty cl <+> pretty cc <+> parens (pretty nt) <+> parens (pretty lt) <+> parens (pretty hnt)
            <> line <> (indent 3 (pretty h))
            <> line <> (indent 4 (pretty ts))
 
-mkNode x cs = Node (Val
+mkNode x mnt cs = Node (Val
                     { here = x
+                    , here_nt = mnt
                     , changedLocal = False, changedChild = False
                     , terminals = []
                     , next_terminal = getNextTerminal cs
@@ -200,8 +205,8 @@ getLastTerminal cs
       [] -> Nothing
       ls -> Just (last ls)
 
-mkNodeNt x cs nt
-  = let Node v cs' = (mkNode x cs)
+mkNodeNt x mnt cs nt
+  = let Node v cs' = (mkNode x mnt cs)
     in Node (v { next_terminal = Just nt }) cs'
 
 -- data Input a
@@ -227,7 +232,7 @@ instance Pretty Tok
 
 type HappyInput = Node HappyAbsSynType Tok
 
-mkTokensNode tks = head $ setTerminals [mkNode (HappyErrorToken (-5)) []] tks
+mkTokensNode tks = head $ setTerminals [mkNode (HappyErrorToken (-5)) Nothing []] tks
 
 setTerminals :: [Node a b] -> [b] -> [Node a b]
 setTerminals [] _ = notHappyAtAll
@@ -261,10 +266,10 @@ happyDoAction mode la inp@((Node (Val {terminals = toks, next_terminal = mnext})
                                                                ++ ")")
                                                    (happyReduceArr Happy_Data_Array.! rule) Normal i inp st
                                                    where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
-                n                 -> DEBUG_TRACE("not shift, enter state "
+                n                 -> DEBUG_TRACE("shift, enter state "
                                                  ++ show IBOX(new_state)
                                                  ++ "\n")
-                                     happyShift new_state i [(mkNodeNt (HappyTerminal tk) [] tok)] st
+                                     happyShift new_state i [(mkNodeNt (HappyTerminal tk) Nothing [] tok)] st
                                      where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
           where off    = indexShortOffAddr happyActOffsets st
                 off_i  = PLUS(off,i)
@@ -285,8 +290,8 @@ happyDoAction mode la inp@((Node (Val {terminals = toks, next_terminal = mnext})
                 Just tok@(Tok i _) ->
                   DEBUG_TRACE ("all reductions.\n")
                    (performAllReductionsPossible i (setTerminals inp [tok]) st)
-                Nothing -> DEBUG_TRACE ("shift or breakdown.\n")
-                            shiftOrBreakdown inp st
+                Nothing -> DEBUG_TRACE ("mnext == Nothing. \n")
+                            happyNewToken st
     AllReductions -> performAllReductionsPossible ((ILIT(0))) inp st
 
 performAllReductionsPossible :: FAST_INT
@@ -310,8 +315,14 @@ performAllReductionsPossible la inp@((Node (Val {terminals = toks}) _):_) st
                                                                ++ ")")
                                                    (happyReduceArr Happy_Data_Array.! rule) AllReductions i inp st
                                                    where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
-                n                 -> DEBUG_TRACE("no shift. \n")
-                                     happyDoAction Normal st inp st
+                n                 -> DEBUG_TRACE("shift and breakdown. B\n")
+                                     shiftOrBreakdown inp st
+                                     -- happyNewToken st
+                -- n                 -> DEBUG_TRACE("shift, enter state "
+                --                                  ++ show IBOX(new_state)
+                --                                  ++ "\n")
+                --                      happyShift new_state i inp st
+                --                      where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
           where off    = indexShortOffAddr happyActOffsets st
                 off_i  = PLUS(off,i)
                 check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
@@ -334,14 +345,28 @@ leftBreakdown am la (inp@(Node v cs):_) st sts stk ts
       then happyNewToken st sts stk ts
       else happyNewToken st sts stk (cs ++ ts)
 
+rightBreakdown :: FAST_INT   -- ^ Current state
+               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
+               -> [HappyInput] -- ^ Input being processed
+               -> HappyIdentity HappyInput
+rightBreakdown st sts stk ts
+  -- TODO: implement this
+  = happyNewToken st sts stk ts
+
 shiftOrBreakdown :: [HappyInput]
-              -> FAST_INT -- ^ Current state
-              -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
-              -> [HappyInput] -- Input being processed
-              -> HappyIdentity HappyInput
-shiftOrBreakdown (inp@(Node (Val {terminals = toks}) _):_) st
-  -- = error "shiftOrBreakdown"
-  = happyNewToken st
+                 -> FAST_INT -- ^ Current state
+                 -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
+                 -> [HappyInput] -- Input being processed
+                 -> HappyIdentity HappyInput
+shiftOrBreakdown (inp@(Node v@(Val {last_terminal = mtok,here_nt = mnt}) _):_) st sts stk
+  = DEBUG_TRACE("shiftOrBreakdown:inp=" ++ show v)
+    case (mnt, mtok) of
+      (Just (IBOX(nt)), Just (Tok i tk)) -> -- happyGoto Normal IBOX(nt) i inp st
+        rightBreakdown new_state CONS(st,sts) (inp `HappyStk` stk)
+        where off = indexShortOffAddr happyGotoOffsets st
+              off_i = PLUS(off,nt)
+              new_state = indexShortOffAddr happyTable off_i
+      _ -> DEBUG_TRACE("shiftOrBreakdown:no non-terminal and/or no last_terminal.\n") happyNewToken st sts stk
 
 changed :: [HappyInput] -> Bool
 changed [] = False
@@ -447,7 +472,7 @@ happyShift new_state i (inp:_) st sts stk =
 -- happyReduce is specialised for the common cases.
 
 happySpecReduce_0 :: DoACtionMode
-                  -> FAST_INT   -- Number of stack items to pop
+                  -> FAST_INT   -- Non terminal to end up on TOS
                   -> HappyInput -- function from TOS items to new TOS
                   -> FAST_INT   -- input token value
                   -> [HappyInput]
@@ -563,10 +588,10 @@ happyDropStk n (x `HappyStk` xs) = happyDropStk MINUS(n,(ILIT(1)::FAST_INT)) xs
 
 #if defined(HAPPY_INCR)
 happyGoto :: DoACtionMode -- am
-          -> FAST_INT
-          -> FAST_INT     -- token int corresponding to the input
+          -> FAST_INT       -- non-terminal on TOS
+          -> FAST_INT       -- token int corresponding to the input
           -> [HappyInput]   -- was tk, now inp
-          -> FAST_INT     -- st
+          -> FAST_INT       -- st
           -> Happy_IntList -> HappyStk HappyInput
           -> [HappyInput]
           -> HappyIdentity HappyInput
