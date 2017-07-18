@@ -146,3 +146,56 @@ Val False False (HappyAbsSyn4 (Minus (Term (Factor (Int 1))) (Factor (Int 2)))) 
 |
 `- Val False False (HappyAbsSyn6 ()) [] (Nothing) (Nothing)
 *Main> :r
+
+--------------------------------------------------------------------------
+
+Input (modified) tree
+
+Val False True (HappyAbsSyn4 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) (Just 0) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 2)))
+|
++- Val False False (HappyAbsSyn5 ()) (Just 1) [] (Nothing) (Nothing)
+|
++- Val False True (HappyAbsSyn7 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) (Just 3) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 2)))
+|  |
+|  `- Val False True (HappyAbsSyn8 (Plus (Term (Factor (Int 1))) (Factor (Int 2)))) (Just 4) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 2)))
+|     |
+|     +- Val False False (HappyAbsSyn8 (Term (Factor (Int 1)))) (Just 4) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |  |
+|     |  `- Val False False (HappyAbsSyn9 (Factor (Int 1))) (Just 5) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |     |
+|     |     `- Val False False (HappyAbsSyn10 (Int 1)) (Just 6) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |        |
+|     |        `- Val False False (HappyTerminal (TokenInt 1)) (Nothing) [] (Just (Tok 1# (TokenInt 1))) (Just (Tok 1# (TokenInt 1)))
+|     |
+|     +- Val True True (HappyErrorToken (-5)) (Nothing) [Tok -10# TokenMinus] (Nothing) (Nothing)
+|     |
+|     `- Val False False (HappyAbsSyn9 (Factor (Int 2))) (Just 5) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|        |
+|        `- Val False False (HappyAbsSyn10 (Int 2)) (Just 6) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|           |
+|           `- Val False False (HappyTerminal (TokenInt 2)) (Nothing) [] (Just (Tok 1# (TokenInt 2))) (Just (Tok 1# (TokenInt 2)))
+|
+`- Val False False (HappyAbsSyn6 ()) (Just 2) [] (Nothing) (Nothing)
+
+--------------------------------------------------------------------------------
+
+For each (state, non-terminal), give goto val
+Goto:array (0,17)
+[(0,array  (4,10) [(4,Goto 3),(5,Goto 2),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(1,array  (4,10) [(4,NoGoto),(5,Goto 2),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(2,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,Goto 4),(8,Goto 5),(9,Goto 6), (10,Goto 7)])
+,(3,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(4,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,Goto 13),(7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(5,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(6,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(7,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(8,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(9,array  (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,Goto 17)])
+,(10,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,Goto 16)])
+,(11,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,Goto 15),(10,Goto 7)])
+,(12,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,Goto 14),(10,Goto 7)])
+,(13,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(14,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(15,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(16,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])
+,(17,array (4,10) [(4,NoGoto),(5,NoGoto),(6,NoGoto), (7,NoGoto),(8,NoGoto),(9,NoGoto), (10,NoGoto)])]

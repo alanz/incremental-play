@@ -126,8 +126,16 @@ data DoACtionMode = Normal | AllReductions
 -----------------------------------------------------------------------------
 -- starting the parse
 
+#define HAPPYSTATESENTINEL  (ILIT(-1000))
+happyNodeSentinel = mkNode (HappyErrorToken (-1000)) Nothing []
+
 happyParse :: FAST_INT -> [HappyInput] -> HappyIdentity HappyInput
-happyParse start_state = happyNewToken start_state notHappyAtAll notHappyAtAll
+happyParse start_state = happyNewToken start_state CONS(HAPPYSTATESENTINEL,notHappyAtAll) (happyNodeSentinel `HappyStk` notHappyAtAll)
+
+showStacks :: Happy_IntList -> HappyStk HappyInput -> String
+showStacks (CONS(HAPPYSTATESENTINEL,_)) _ = "[]"
+showStacks (CONS(st,sts)) ((Node v _) `HappyStk` stks)
+  = show (IBOX(st),take 30 $ showHere v) ++ ":" ++ showStacks sts stks
 
 -----------------------------------------------------------------------------
 -- Accepting the parse
@@ -182,6 +190,10 @@ instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Val a b) where
            <> line <> (indent 3 (pretty h))
            <> line <> (indent 4 (pretty ts))
 
+showHere :: (Show a, Show b) => Val a b -> String
+showHere Val { here = h, here_nt = Nothing } = "T " ++ show h
+showHere Val { here = h, here_nt = Just nt } = "NT" ++ show nt ++ " " ++ show h
+
 mkNode x mnt cs = Node (Val
                     { here = x
                     , here_nt = mnt
@@ -201,17 +213,13 @@ getNextTerminal cs
 getLastTerminal :: [Node a b] -> Maybe b
 getLastTerminal [] = Nothing
 getLastTerminal cs
-  = case catMaybes (map (next_terminal . rootLabel) cs) of
+  = case catMaybes (map (last_terminal . rootLabel) cs) of
       [] -> Nothing
       ls -> Just (last ls)
 
 mkNodeNt x mnt cs nt
   = let Node v cs' = (mkNode x mnt cs)
-    in Node (v { next_terminal = Just nt }) cs'
-
--- data Input a
---   = Terminal FAST_INT
---   | NonTerminal a
+    in Node (v { next_terminal = Just nt, last_terminal = Just nt }) cs'
 
 -- AZ:NOTE: The second param below (Token) can/should be moved into the Input
 -- type, as it is meaningless for a nonterminal. But what about compatibility
@@ -249,8 +257,9 @@ happyDoAction :: DoACtionMode
               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
-happyDoAction mode la inp@((Node (Val {terminals = toks, next_terminal = mnext}) _):_) st
-  = case mode of
+happyDoAction mode la inp@((Node (Val {terminals = toks, next_terminal = mnext}) _):_) st sts stk
+  = DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
+    case mode of
     Normal ->
       case toks of
         (tok@(Tok i tk):ts) ->
@@ -259,17 +268,17 @@ happyDoAction mode la inp@((Node (Val {terminals = toks, next_terminal = mnext})
                       ",\taction: ")
           case action of
                 ILIT(0)           -> DEBUG_TRACE("fail.\n")
-                                     happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st
+                                     happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk
                 ILIT(-1)          -> DEBUG_TRACE("accept. A\n")
-                                       happyAccept i tk st
+                                       happyAccept i tk st sts stk
                 n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
                                                                ++ ")")
-                                                   (happyReduceArr Happy_Data_Array.! rule) Normal i inp st
+                                                   (happyReduceArr Happy_Data_Array.! rule) Normal i inp st sts stk
                                                    where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
                 n                 -> DEBUG_TRACE("shift, enter state "
                                                  ++ show IBOX(new_state)
                                                  ++ "\n")
-                                     happyShift new_state i [(mkNodeNt (HappyTerminal tk) Nothing [] tok)] st
+                                     happyShift new_state i [(mkNodeNt (HappyTerminal tk) Nothing [] tok)] st sts stk
                                      where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
           where off    = indexShortOffAddr happyActOffsets st
                 off_i  = PLUS(off,i)
@@ -284,15 +293,15 @@ happyDoAction mode la inp@((Node (Val {terminals = toks, next_terminal = mnext})
                       ",\ttree: " ++ (take 20 $ show (here $ rootLabel $ head inp)) ++
                       ",\taction: ")
           if changed inp
-            then DEBUG_TRACE ("left breakdown.\n") leftBreakdown Normal la inp st
+            then DEBUG_TRACE ("left breakdown.\n") leftBreakdown Normal la inp st sts stk
             else
               case mnext of
                 Just tok@(Tok i _) ->
                   DEBUG_TRACE ("all reductions.\n")
-                   (performAllReductionsPossible i (setTerminals inp [tok]) st)
-                Nothing -> DEBUG_TRACE ("mnext == Nothing. \n")
-                            happyNewToken st
-    AllReductions -> performAllReductionsPossible ((ILIT(0))) inp st
+                   (performAllReductionsPossible i (setTerminals inp [tok]) st sts stk)
+                Nothing -> DEBUG_TRACE ("mnext == Nothing.\n")
+                            happyNewToken st sts stk
+    AllReductions -> performAllReductionsPossible ((ILIT(0))) inp st sts stk
 
 performAllReductionsPossible :: FAST_INT
               -> [HappyInput]
@@ -349,9 +358,35 @@ rightBreakdown :: FAST_INT   -- ^ Current state
                -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
                -> [HappyInput] -- ^ Input being processed
                -> HappyIdentity HappyInput
-rightBreakdown st sts stk ts
-  -- TODO: implement this
-  = happyNewToken st sts stk ts
+rightBreakdown st sts@(CONS(sts1,stss)) stk@(stk1@(Node v cs) `HappyStk` stks)
+  -- Break down the right hand edge of the top of the parse stack until it is
+  -- the last_terminal value of the original.
+  -- Nodes not having a last_terminal are discarded (no yield)
+  = DEBUG_TRACE("rightBreakdown:stacks=" ++ (showStacks sts stk) ++ "\n")
+    if hasYield stk1
+     then case cs of
+            [] -> DEBUG_TRACE("rightBreakdown:has yield, no children:(st,sts1,stk1)=" ++
+                              (unwords [show IBOX(st),show IBOX(sts1), take 30 ( show (here v))]) ++ ".\n")
+                  happyNewToken st sts stk
+            _  -> -- shift each child onto the stack, then call rightBreakdown again
+              DEBUG_TRACE("rightBreakdown:going through children (n=" ++ show (length cs) ++ ").\n")
+              rightBreakdown st2 sts' stk'
+              where
+                (st',sts',stk') = foldl' go (IBOX(st),stss,stks) cs
+                !(IBOX(st2)) = st'
+                go :: (Int, Happy_IntList, HappyStk HappyInput) -> HappyInput -> (Int, Happy_IntList, HappyStk HappyInput)
+                go  (IBOX(st), sts, stk) c@(Node v@(Val {last_terminal = mtok,here_nt = mnt}) _)
+                  = DEBUG_TRACE("rightBreakdown:go:(st,v)=" ++ show (IBOX(st),take 30 $ showHere v) ++ "\n")
+                    case (mnt, mtok) of
+                      (Just (IBOX(nt)), Just (Tok i tk)) ->
+                        DEBUG_TRACE("go:nt " ++ (showStacks sts stk) ++ "\n")
+                        (IBOX(nextState st nt), CONS(st,sts), (c `HappyStk` stk))
+                      (Nothing,         Just (Tok i tk)) ->
+                        DEBUG_TRACE("go:terminal " ++ (showStacks sts stk) ++ "\n")
+                        (IBOX(nextState st i), CONS(st,sts), (c `HappyStk` stk))
+                      _ -> DEBUG_TRACE("rightBreakdown:no non-terminal and/or no last_terminal.\n") notHappyAtAll
+
+     else DEBUG_TRACE("rightBreakdown,no yield, popping stack") rightBreakdown sts1 stss stks
 
 shiftOrBreakdown :: [HappyInput]
                  -> FAST_INT -- ^ Current state
@@ -359,19 +394,33 @@ shiftOrBreakdown :: [HappyInput]
                  -> [HappyInput] -- Input being processed
                  -> HappyIdentity HappyInput
 shiftOrBreakdown (inp@(Node v@(Val {last_terminal = mtok,here_nt = mnt}) _):_) st sts stk
-  = DEBUG_TRACE("shiftOrBreakdown:inp=" ++ show v)
+  = DEBUG_TRACE("shiftOrBreakdown:inp=" ++ (take 20 $ show (here v)))
     case (mnt, mtok) of
-      (Just (IBOX(nt)), Just (Tok i tk)) -> -- happyGoto Normal IBOX(nt) i inp st
-        rightBreakdown new_state CONS(st,sts) (inp `HappyStk` stk)
-        where off = indexShortOffAddr happyGotoOffsets st
-              off_i = PLUS(off,nt)
-              new_state = indexShortOffAddr happyTable off_i
+      (Just (IBOX(nt)), Just _) -> -- happyGoto Normal IBOX(nt) i inp st
+        DEBUG_TRACE(", (st,nt)=" ++ show (IBOX(st),IBOX(nt)) ++ "\n")
+        rightBreakdown (nextState st nt) CONS(st,sts) (inp `HappyStk` stk)
       _ -> DEBUG_TRACE("shiftOrBreakdown:no non-terminal and/or no last_terminal.\n") happyNewToken st sts stk
+
+nextState' :: Int -> Int -> Int
+nextState' st' nt' =
+  case (st',nt') of
+   (IBOX(st), IBOX(nt)) -> (IBOX(nextState st nt))
+
+nextState :: FAST_INT -> FAST_INT -> FAST_INT
+nextState st nt =
+  if happyGotoValid IBOX(st) IBOX(nt)
+    then new_state
+    else ILIT(0)
+  where off = indexShortOffAddr happyGotoOffsets st
+        off_i = PLUS(off,nt)
+        new_state = indexShortOffAddr happyTable off_i
 
 changed :: [HappyInput] -> Bool
 changed [] = False
 changed ((Node (Val { changedLocal = cl, changedChild = cc}) _):_) = cl || cc
 
+hasYield :: HappyInput -> Bool
+hasYield (Node (Val { last_terminal = mlt}) _) = isJust mlt
 #endif /* HAPPY_INCR */
 
 
@@ -466,7 +515,7 @@ happyShift new_state (TERMINAL(ERROR_TOK)) inp st sts stk@(x `HappyStk` _) =
      DO_ACTION(new_state,i,inp,CONS(st,sts),stk)
 
 happyShift new_state i (inp:_) st sts stk =
-     DEBUG_TRACE("happyShift:(new_state,i,inp)=" ++ show (IBOX(new_state),IBOX(i),inp) ++ "\n")
+     -- DEBUG_TRACE("happyShift:(new_state,i,inp)=" ++ show (IBOX(new_state),IBOX(i),inp) ++ "\n")
      happyNewToken new_state CONS(st,sts) (inp `HappyStk`stk)
 
 -- happyReduce is specialised for the common cases.
