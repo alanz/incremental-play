@@ -257,8 +257,9 @@ happyDoAction :: DoACtionMode
               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
-happyDoAction mode la inp@((Node (Val {terminals = toks, next_terminal = mnext}) _):_) st sts stk
+happyDoAction mode la inp@((Node v@(Val {terminals = toks, next_terminal = mnext}) _):_) st sts stk
   = DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
+    DEBUG_TRACE("happyDoAction:inp=" ++ showHere v ++ "\n")
     case mode of
     Normal ->
       case toks of
@@ -365,14 +366,21 @@ rightBreakdown st sts@(CONS(sts1,stss)) stk@(stk1@(Node v cs) `HappyStk` stks)
   = DEBUG_TRACE("rightBreakdown:stacks=" ++ (showStacks sts stk) ++ "\n")
     if hasYield stk1
      then case cs of
-            [] -> DEBUG_TRACE("rightBreakdown:has yield, no children:(st,sts1,stk1)=" ++
+            [] -> DEBUG_TRACE("rightBreakdown:has yield, no children, ie token:(st,sts1,stk1)=" ++
                               (unwords [show IBOX(st),show IBOX(sts1), take 30 ( show (here v))]) ++ ".\n")
-                  happyNewToken st sts stk
+                  case last_terminal v of
+                    Just (Tok i _) ->
+                      case (nextStateShift sts1 i) of
+                        Just (IBOX(st2)) -> DEBUG_TRACE("rightBreakdown:nextStateShift:" ++ show (IBOX(sts1),IBOX(i),IBOX(st2)) ++ "\n")
+                                            happyNewToken st2 sts stk
+                        Nothing          -> notHappyAtAll
+                    Nothing       -> DEBUG_TRACE("rightBreakdown:no nt\n")
+                                     happyNewToken sts1 sts stk
             _  -> -- shift each child onto the stack, then call rightBreakdown again
               DEBUG_TRACE("rightBreakdown:going through children (n=" ++ show (length cs) ++ ").\n")
               rightBreakdown st2 sts' stk'
               where
-                (st',sts',stk') = foldl' go (IBOX(st),stss,stks) cs
+                (st',sts',stk') = foldl' go (IBOX(sts1),stss,stks) cs
                 !(IBOX(st2)) = st'
                 go :: (Int, Happy_IntList, HappyStk HappyInput) -> HappyInput -> (Int, Happy_IntList, HappyStk HappyInput)
                 go  (IBOX(st), sts, stk) c@(Node v@(Val {last_terminal = mtok,here_nt = mnt}) _)
@@ -414,6 +422,27 @@ nextState st nt =
   where off = indexShortOffAddr happyGotoOffsets st
         off_i = PLUS(off,nt)
         new_state = indexShortOffAddr happyTable off_i
+
+nextStateShift' :: Int -> Int -> Maybe Int
+nextStateShift' st' i' =
+  case (st',i') of
+    ((IBOX(st)), (IBOX(i))) -> nextStateShift st i
+
+nextStateShift :: FAST_INT -> FAST_INT -> Maybe Int
+nextStateShift st i =
+  if (GTE(action, (ILIT(1) :: FAST_INT)))
+    then Just IBOX(MINUS(action,(ILIT(1) :: FAST_INT)))
+    else Nothing
+    -- else Just IBOX(action)
+  where off    = indexShortOffAddr happyActOffsets st
+        off_i  = PLUS(off,i)
+        check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
+                 then EQ(indexShortOffAddr happyCheck off_i, i)
+                 else False
+        action :: FAST_INT
+        action
+         | check     = indexShortOffAddr happyTable off_i
+         | otherwise = indexShortOffAddr happyDefActions st
 
 changed :: [HappyInput] -> Bool
 changed [] = False
