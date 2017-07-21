@@ -137,6 +137,9 @@ showStacks (CONS(HAPPYSTATESENTINEL,_)) _ = "[]"
 showStacks (CONS(st,sts)) ((Node v _) `HappyStk` stks)
   = show (IBOX(st),take 30 $ showHere v) ++ ":" ++ showStacks sts stks
 
+showInput :: [HappyInput] -> String
+showInput ts = "[" ++ intercalate "," (map (showHere . rootLabel) ts) ++ "]"
+
 -----------------------------------------------------------------------------
 -- Accepting the parse
 
@@ -191,8 +194,8 @@ instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Val a b) where
            <> line <> (indent 4 (pretty ts))
 
 showHere :: (Show a, Show b) => Val a b -> String
-showHere Val { here = h, here_nt = Nothing } = "T " ++ show h
-showHere Val { here = h, here_nt = Just nt } = "NT" ++ show nt ++ " " ++ show h
+showHere Val { here = h, here_nt = Nothing, terminals = ts } = "T "                   ++ show h -- ++ " " ++ show ts
+showHere Val { here = h, here_nt = Just nt, terminals = ts } = "NT" ++ show nt ++ " " ++ show h -- ++ " " ++ show ts
 
 mkNode x mnt cs = Node (Val
                     { here = x
@@ -325,7 +328,8 @@ performAllReductionsPossible la inp@(Node (Val {terminals = toks}) _) st
                                                    (happyReduceArr Happy_Data_Array.! rule) AllReductions i inp st
                                                    where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
                 n                 -> DEBUG_TRACE("shift and breakdown. B\n")
-                                     shiftOrBreakdown inp st
+                                     shiftOrBreakdown new_state inp st
+                                     where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
                                      -- happyNewToken st
                 -- n                 -> DEBUG_TRACE("shift, enter state "
                 --                                  ++ show IBOX(new_state)
@@ -395,18 +399,23 @@ rightBreakdown st sts@(CONS(sts1,stss)) stk@(stk1@(Node v cs) `HappyStk` stks)
 
      else DEBUG_TRACE("rightBreakdown,no yield, popping stack") rightBreakdown sts1 stss stks
 
-shiftOrBreakdown :: HappyInput
+shiftOrBreakdown :: FAST_INT -- ^next state, if shifting a terminal
+                 -> HappyInput
                  -> FAST_INT -- ^ Current state
                  -> Happy_IntList -> HappyStk HappyInput -- Current state and shifted item stack
                  -> [HappyInput] -- Input being processed
                  -> HappyIdentity HappyInput
-shiftOrBreakdown (inp@(Node v@(Val {last_terminal = mtok,here_nt = mnt}) _)) st sts stk
-  = DEBUG_TRACE("shiftOrBreakdown:inp=" ++ (take 20 $ show (here v)))
+shiftOrBreakdown new_state (inp@(Node v@(Val {last_terminal = mtok,here_nt = mnt}) _)) st sts stk
+  = DEBUG_TRACE("shiftOrBreakdown:inp=" ++ (take 20 $ showHere v) ++ "\n")
     case (mnt, mtok) of
       (Just (IBOX(nt)), Just _) -> -- happyGoto Normal IBOX(nt) i inp st
         DEBUG_TRACE(", (st,nt)=" ++ show (IBOX(st),IBOX(nt)) ++ "\n")
         rightBreakdown (nextState st nt) CONS(st,sts) (inp `HappyStk` stk)
-      _ -> DEBUG_TRACE("shiftOrBreakdown:no non-terminal and/or no last_terminal.\n") happyNewToken st sts stk
+      _ -> DEBUG_TRACE("shiftOrBreakdown:no non-terminal and/or no last_terminal.\n")
+           if null (terminals v)
+             then happyNewToken st sts stk
+             else DEBUG_TRACE("shiftOrBreakdown:shifting\n")
+                  happyNewToken new_state CONS(st,sts) (inp `HappyStk` stk)
 
 nextState' :: Int -> Int -> Int
 nextState' st' nt' =
