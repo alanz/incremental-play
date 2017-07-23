@@ -4,25 +4,10 @@
 import           ExprSimple
 -- import ExprSimpleOrig
 
--- import           Control.Applicative
 import           Control.Lens
 import           Control.Zipper
--- import           Data.Maybe
--- import           Data.Semigroup
--- import           Data.Text (Text)
--- import qualified Data.Text as T
--- import qualified Data.Text.Lazy as TL
--- import qualified Data.Text.Lazy.Builder as TLB
--- import qualified Data.Text.Lazy.IO as TL
--- import           Data.Text.Prettyprint.Doc
 import           Data.Tree
 import           Data.Tree.Lens
--- import qualified System.Console.ANSI as ANSI
--- import           System.IO (Handle, stdout)
--- import Data.Text.Prettyprint.Doc.Render.Util.Panic
--- import Data.Text.Prettyprint.Doc.Render.Util.StackMachine
--- import           Data.Text.Prettyprint.Doc.Render.Terminal
--- import qualified Text.Show.Prettyprint as PP
 
 main :: IO ()
 main = do

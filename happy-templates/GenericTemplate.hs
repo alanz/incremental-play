@@ -54,7 +54,7 @@ data Happy_IntList = HappyCons FAST_INT Happy_IntList
 
 #if defined(HAPPY_INCR)
 #  define ERROR_TOK ILIT(0)
-#  define DO_ACTION(state,i,tk,sts,stk) happyDoAction Normal i tk state sts (stk)
+#  define DO_ACTION(verifying,state,i,tk,sts,stk) happyDoAction verifying i tk state sts (stk)
 #  define HAPPYSTATE(i) (i)
 #  define GOTO(action) happyGoto
 #  define IF_ARRAYS(x) (x)
@@ -123,6 +123,9 @@ instance Pretty HappyAbsSynType
 data DoACtionMode = Normal | AllReductions
                   deriving Eq
 
+data Verifying = Verifying | NotVerifying
+                  deriving (Eq, Show)
+
 -----------------------------------------------------------------------------
 -- starting the parse
 
@@ -130,7 +133,7 @@ data DoACtionMode = Normal | AllReductions
 happyNodeSentinel = mkNode (HappyErrorToken (-1000)) Nothing []
 
 happyParse :: FAST_INT -> [HappyInput] -> HappyIdentity HappyInput
-happyParse start_state = happyNewToken start_state CONS(HAPPYSTATESENTINEL,notHappyAtAll) (happyNodeSentinel `HappyStk` notHappyAtAll)
+happyParse start_state = happyNewToken NotVerifying start_state CONS(HAPPYSTATESENTINEL,notHappyAtAll) (happyNodeSentinel `HappyStk` notHappyAtAll)
 
 showStacks :: Happy_IntList -> HappyStk HappyInput -> String
 showStacks (CONS(HAPPYSTATESENTINEL,_)) _ = "[]"
@@ -252,59 +255,88 @@ getTerminals :: Node a b -> [b]
 getTerminals (Node v cs) = terminals v
 
 -- old: happyDoAction :: TokenId -> Token -> State -> StateStack -> ItemStack -> [Tokens]
-happyDoAction :: DoACtionMode
+happyDoAction :: Verifying
               -> FAST_INT   -- ^ Current lookahead token number
               -> HappyInput -- ^ input being processed. "parse stack" from the paper  Same as first item on input list?
               -> FAST_INT   -- ^ Current state
               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
-happyDoAction mode la inp@(Node v@(Val {terminals = toks, next_terminal = mnext}) _) st sts stk
+happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext}) cs) st sts stk
   = DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
     DEBUG_TRACE("happyDoAction:inp=" ++ showHere v ++ "\n")
-    case mode of
-    Normal ->
-      case toks of
-        (tok@(Tok i tk):ts) ->
-          DEBUG_TRACE("state: " ++ show IBOX(st) ++
-                      ",\ttoken: " ++ show IBOX(i) ++
-                      ",\taction: ")
-          case action of
-                ILIT(0)           -> DEBUG_TRACE("fail.\n")
-                                     happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk
-                ILIT(-1)          -> DEBUG_TRACE("accept. A\n")
-                                       happyAccept i tk st sts stk
-                n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
-                                                               ++ ")")
-                                                   (happyReduceArr Happy_Data_Array.! rule) Normal i inp st sts stk
-                                                   where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
-                n                 -> DEBUG_TRACE("shift, enter state "
-                                                 ++ show IBOX(new_state)
-                                                 ++ "\n")
-                                     happyShift new_state i (mkNodeNt (HappyTerminal tk) Nothing [] tok) st sts stk
-                                     where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
-          where off    = indexShortOffAddr happyActOffsets st
-                off_i  = PLUS(off,i)
-                check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
-                         then EQ(indexShortOffAddr happyCheck off_i, i)
-                         else False
-                action
-                 | check     = indexShortOffAddr happyTable off_i
-                 | otherwise = indexShortOffAddr happyDefActions st
-        _ ->
-          DEBUG_TRACE("state: " ++ show IBOX(st) ++
-                      ",\ttree: " ++ (take 20 $ show (here $ rootLabel inp)) ++
-                      ",\taction: ")
-          if changed inp
-            then DEBUG_TRACE ("left breakdown.\n") leftBreakdown Normal la inp st sts stk
-            else
-              case mnext of
-                Just tok@(Tok i _) ->
-                  DEBUG_TRACE ("all reductions.\n")
-                   (performAllReductionsPossible i (setTerminals inp [tok]) st sts stk)
-                Nothing -> DEBUG_TRACE ("mnext == Nothing.\n")
-                            happyNewToken st sts stk
-    AllReductions -> performAllReductionsPossible ((ILIT(0))) inp st sts stk
+    case toks of -- Terminals
+      (tok@(Tok i tk):ts) ->
+        DEBUG_TRACE("t:state: " ++ show IBOX(st) ++
+                    ",\ttoken: " ++ show IBOX(i) ++
+                    ",\taction: ")
+        case action of
+              ILIT(0)           -> DEBUG_TRACE("fail.\n")
+                                   if verifying == Verifying
+                                     then rightBreakdown st sts stk
+                                     else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk
+              ILIT(-1)          -> DEBUG_TRACE("accept. A\n")
+                                     happyAccept i tk st sts stk
+              n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
+                                                             ++ ")")
+                                                 (happyReduceArr Happy_Data_Array.! rule) NotVerifying i inp st sts stk
+                                                 where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
+              n                 -> DEBUG_TRACE("shift, enter state "
+                                               ++ show IBOX(new_state)
+                                               ++ "\n")
+                                   happyShift NotVerifying new_state i (mkNodeNt (HappyTerminal tk) Nothing [] tok) st sts stk
+                                   where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
+        where off    = indexShortOffAddr happyActOffsets st
+              off_i  = PLUS(off,i)
+              check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
+                       then EQ(indexShortOffAddr happyCheck off_i, i)
+                       else False
+              action
+               | check     = indexShortOffAddr happyTable off_i
+               | otherwise = indexShortOffAddr happyDefActions st
+      _ -> -- Non-terminal input
+        DEBUG_TRACE("nt:state: " ++ show IBOX(st) ++
+                    ",\ttree: " ++ (take 20 $ show (here $ rootLabel inp)) ++
+                    ",\taction: ")
+        if changed inp
+          then DEBUG_TRACE ("left breakdown.\n")
+               leftBreakdown verifying la inp st sts stk
+          else
+            -- TODO: extend the tables to use the stored non-terminal value instead
+            case mnext of
+              Just tok@(Tok i tk) ->
+-------------------------------
+                -- DEBUG_TRACE("nt:state: " ++ show IBOX(st) ++
+                --             ",\ttoken: " ++ show IBOX(i) ++
+                --             ",\taction: ")
+                case action of
+                      ILIT(0)           -> DEBUG_TRACE("fail.\n")
+                                           if null cs
+                                             then happyNewToken verifying st sts stk
+                                             else leftBreakdown NotVerifying la inp st sts stk
+                      ILIT(-1)          -> DEBUG_TRACE("nt:accept. A\n")
+                                             -- This can never happen
+                                             happyAccept i tk st sts stk
+                      n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
+                                                                     ++ ")")
+                                                         (happyReduceArr Happy_Data_Array.! rule) NotVerifying i inp st sts stk
+                                                         where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
+                      n                 -> DEBUG_TRACE("shift, enter state "
+                                                       ++ show IBOX(new_state)
+                                                       ++ "\n")
+                                           happyShift Verifying new_state i (mkNodeNt (HappyTerminal tk) Nothing [] tok) st sts stk
+                                           where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
+                where off    = indexShortOffAddr happyActOffsets st
+                      off_i  = PLUS(off,i)
+                      check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
+                               then EQ(indexShortOffAddr happyCheck off_i, i)
+                               else False
+                      action
+                       | check     = indexShortOffAddr happyTable off_i
+                       | otherwise = indexShortOffAddr happyDefActions st
+-------------------------------
+              Nothing -> DEBUG_TRACE ("mnext == Nothing.\n")
+                          happyNewToken NotVerifying st sts stk
 
 performAllReductionsPossible :: FAST_INT
               -> HappyInput
@@ -325,7 +357,7 @@ performAllReductionsPossible la inp@(Node (Val {terminals = toks}) _) st
                                      happyAccept i tk st
                 n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce B (rule " ++ show rule
                                                                ++ ")")
-                                                   (happyReduceArr Happy_Data_Array.! rule) AllReductions i inp st
+                                                   (happyReduceArr Happy_Data_Array.! rule) NotVerifying i inp st
                                                    where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
                 n                 -> DEBUG_TRACE("shift and breakdown. B\n")
                                      shiftOrBreakdown new_state inp st
@@ -346,17 +378,17 @@ performAllReductionsPossible la inp@(Node (Val {terminals = toks}) _) st
                  | otherwise = indexShortOffAddr happyDefActions st
         _ -> error "performAllReductionsPossible NonTerminal"
 
-leftBreakdown :: DoACtionMode
+leftBreakdown :: Verifying
               -> FAST_INT   -- ^ Current lookahead token number
               -> HappyInput -- ^ input being processed. "parse stack" from the paper Same as first item on input list?
               -> FAST_INT   -- ^ Current state
               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
-leftBreakdown am la inp@(Node v cs) st sts stk ts
+leftBreakdown verifying la inp@(Node v cs) st sts stk ts
   = if null cs
-      then happyNewToken st sts stk ts
-      else happyNewToken st sts stk (cs ++ ts)
+      then happyNewToken verifying st sts stk ts
+      else happyNewToken verifying st sts stk (cs ++ ts)
 
 rightBreakdown :: FAST_INT   -- ^ Current state
                -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
@@ -375,10 +407,10 @@ rightBreakdown st sts@(CONS(sts1,stss)) stk@(stk1@(Node v cs) `HappyStk` stks)
                     Just (Tok i _) ->
                       case (nextStateShift sts1 i) of
                         Just (IBOX(st2)) -> DEBUG_TRACE("rightBreakdown:nextStateShift:" ++ show (IBOX(sts1),IBOX(i),IBOX(st2)) ++ "\n")
-                                            happyNewToken st2 sts stk
+                                            happyNewToken NotVerifying st2 sts stk
                         Nothing          -> notHappyAtAll
                     Nothing       -> DEBUG_TRACE("rightBreakdown:no nt\n")
-                                     happyNewToken sts1 sts stk
+                                     happyNewToken NotVerifying sts1 sts stk
             _  -> -- shift each child onto the stack, then call rightBreakdown again
               DEBUG_TRACE("rightBreakdown:going through children (n=" ++ show (length cs) ++ ").\n")
               rightBreakdown st2 sts' stk'
@@ -413,9 +445,9 @@ shiftOrBreakdown new_state (inp@(Node v@(Val {last_terminal = mtok,here_nt = mnt
         rightBreakdown (nextState st nt) CONS(st,sts) (inp `HappyStk` stk)
       _ -> DEBUG_TRACE("shiftOrBreakdown:no non-terminal and/or no last_terminal.\n")
            if null (terminals v)
-             then happyNewToken st sts stk
+             then happyNewToken NotVerifying st sts stk
              else DEBUG_TRACE("shiftOrBreakdown:shifting\n")
-                  happyNewToken new_state CONS(st,sts) (inp `HappyStk` stk)
+                  happyNewToken NotVerifying new_state CONS(st,sts) (inp `HappyStk` stk)
 
 nextState' :: Int -> Int -> Int
 nextState' st' nt' =
@@ -537,7 +569,8 @@ newtype HappyState b c = HappyState
 -----------------------------------------------------------------------------
 -- Shifting a token
 
-happyShift :: FAST_INT  -- new state
+happyShift :: Verifying
+           -> FAST_INT  -- new state
            -> FAST_INT  --  Current lookahead token number
            -> HappyInput -- current input / "parse tree"
            -> FAST_INT   -- current state
@@ -545,18 +578,18 @@ happyShift :: FAST_INT  -- new state
            -> HappyStk HappyInput
            -> [HappyInput]
            -> HappyIdentity HappyInput
-happyShift new_state (TERMINAL(ERROR_TOK)) inp st sts stk@(x `HappyStk` _) =
+happyShift verifying new_state (TERMINAL(ERROR_TOK)) inp st sts stk@(x `HappyStk` _) =
      let i = GET_ERROR_TOKEN(x) in
 --     trace "shifting the error token" $
-     DO_ACTION(new_state,i,inp,CONS(st,sts),stk)
+     DO_ACTION(verifying,new_state,i,inp,CONS(st,sts),stk)
 
-happyShift new_state i inp st sts stk =
+happyShift verifying new_state i inp st sts stk =
      -- DEBUG_TRACE("happyShift:(new_state,i,inp)=" ++ show (IBOX(new_state),IBOX(i),inp) ++ "\n")
-     happyNewToken new_state CONS(st,sts) (inp `HappyStk`stk)
+     happyNewToken verifying new_state CONS(st,sts) (inp `HappyStk`stk)
 
 -- happyReduce is specialised for the common cases.
 
-happySpecReduce_0 :: DoACtionMode
+happySpecReduce_0 :: Verifying
                   -> FAST_INT   -- Non terminal to end up on TOS
                   -> HappyInput -- function from TOS items to new TOS
                   -> FAST_INT   -- input token value
@@ -571,7 +604,7 @@ happySpecReduce_0 am nt fn ERROR_TOK inp st sts stk
 happySpecReduce_0 am nt fn j inp st@(HAPPYSTATE(action)) sts stk
      = GOTO(action) am nt j inp st CONS(st,sts) (fn `HappyStk` stk)
 
-happySpecReduce_1 :: DoACtionMode
+happySpecReduce_1 :: Verifying
                   -> FAST_INT
                   -> (HappyInput -> HappyInput)
                   -> FAST_INT
@@ -587,7 +620,7 @@ happySpecReduce_1 am nt fn j tk _ sts@(CONS(st@HAPPYSTATE(action),_)) (v1`HappyS
      = let !r = fn v1 in -- TODO:AZ strictness?
        happySeq r (GOTO(action) am nt j tk st sts (r `HappyStk` stk'))
 
-happySpecReduce_2 :: DoACtionMode
+happySpecReduce_2 :: Verifying
                   -> FAST_INT
                   -> (HappyInput -> HappyInput -> HappyInput)
                   -> FAST_INT
@@ -603,7 +636,7 @@ happySpecReduce_2 am nt fn j tk _ CONS(_,sts@(CONS(st@HAPPYSTATE(action),_))) (v
      = let !r = fn v1 v2 in -- TODO:AZ strictness?
        happySeq r (GOTO(action) am nt j tk st sts (r `HappyStk` stk'))
 
-happySpecReduce_3 :: DoACtionMode
+happySpecReduce_3 :: Verifying
                   -> FAST_INT
                   -> (HappyInput -> HappyInput -> HappyInput -> HappyInput)
                   -> FAST_INT
@@ -628,7 +661,7 @@ happyReduce k am nt fn j tk st sts stk
                 happyDoSeq r (GOTO(action) am nt j tk st1 sts1 r)
 
 happyMonadReduce :: FAST_INT      -- number of items to remove from stack
-                 -> DoACtionMode
+                 -> Verifying
                  -> FAST_INT
                  -> (Happy_IntList -> HappyStk HappyInput -> HappyIdentity HappyInput)
                  -> FAST_INT               -- input token
@@ -646,9 +679,9 @@ happyMonadReduce k am nt fn j inp st sts stk =
           let drop_stk = happyDropStk k stk in
           happyThen1 (fn sts stk) (\r -> GOTO(action) am nt j inp st1 sts1 (r `HappyStk` drop_stk))
 
-happyMonad2Reduce k am nt fn ERROR_TOK tk st sts stk
+happyMonad2Reduce v k am nt fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
-happyMonad2Reduce k am nt fn j tk st sts stk =
+happyMonad2Reduce v k am nt fn j tk st sts stk =
       case happyDrop k CONS(st,sts) of
         sts1@(CONS(st1@HAPPYSTATE(action),_)) ->
          let drop_stk = happyDropStk k stk
@@ -660,7 +693,7 @@ happyMonad2Reduce k am nt fn j tk st sts stk =
              new_state = action
 #endif
           in
-          happyThen1 (fn stk tk) (\r -> happyNewToken new_state sts1 (r `HappyStk` drop_stk))
+          happyThen1 (fn stk tk) (\r -> happyNewToken v new_state sts1 (r `HappyStk` drop_stk))
 
 happyDrop ILIT(0) l = l
 happyDrop n CONS(_,t) = happyDrop MINUS(n,(ILIT(1) :: FAST_INT)) t
@@ -672,7 +705,7 @@ happyDropStk n (x `HappyStk` xs) = happyDropStk MINUS(n,(ILIT(1)::FAST_INT)) xs
 -- Moving to a new state after a reduction
 
 #if defined(HAPPY_INCR)
-happyGoto :: DoACtionMode -- am
+happyGoto :: Verifying -- am
           -> FAST_INT       -- non-terminal on TOS
           -> FAST_INT       -- token int corresponding to the input
           -> HappyInput     -- was tk, now inp
@@ -722,7 +755,7 @@ happyFail explist ERROR_TOK inp old_st _ stk@(x `HappyStk` _) =
 happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts) 
                                                 (saved_tok `HappyStk` _ `HappyStk` stk) =
 --      trace ("discarding state, depth " ++ show (length stk))  $
-        DO_ACTION(action,ERROR_TOK,tk,sts,(saved_tok`HappyStk`stk))
+        DO_ACTION(NotVerifying,action,ERROR_TOK,tk,sts,(saved_tok`HappyStk`stk))
 -}
 
 -- Enter error recovery: generate an error token,
@@ -730,7 +763,7 @@ happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts)
 happyFail explist i inp HAPPYSTATE(action) sts stk =
 --      trace "entering error recovery" $
    -- TODO:AZ: restore the error processing
-        -- DO_ACTION(action,(TERMINAL(ERROR_TOK)),inp,sts, MK_ERROR_TOKEN(i) `HappyStk` stk)
+        -- DO_ACTION(NotVerifying,action,(TERMINAL(ERROR_TOK)),inp,sts, MK_ERROR_TOKEN(i) `HappyStk` stk)
         happyError_ explist i inp
 
 -- Internal happy errors:
