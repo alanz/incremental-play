@@ -1,7 +1,10 @@
 
-all : app/ExprSimple.y happy-templates/HappyTemplate-incremental-ghc-debug
-	# happy --ghc --array --debug --template=./happy-templates --info=Simple.info app/Simple.y
-	# happy --ghc --incremental --debug --template=./happy-templates --info=Simple.info app/Simple.y
+all : app/ExprPrecedence.y happy-templates/HappyTemplate-incremental-ghc-debug
+	happy --ghc --incremental --debug --template=./happy-templates --info=ExprPrecedence.info \
+    --lr0 --action --goto --lookaheads \
+    app/ExprPrecedence.y
+
+simple : app/ExprSimple.y happy-templates/HappyTemplate-incremental-ghc-debug
 	happy --ghc --incremental --debug --template=./happy-templates --info=ExprSimple.info \
     --lr0 --action --goto --lookaheads \
     app/ExprSimple.y
