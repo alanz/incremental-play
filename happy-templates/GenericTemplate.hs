@@ -225,7 +225,7 @@ getLastTerminal cs
 
 mkNodeNt x mnt cs nt
   = let Node v cs' = (mkNode x mnt cs)
-    in Node (v { next_terminal = Just nt, last_terminal = Just nt }) cs'
+    in Node (v { next_terminal = Just nt, last_terminal = Just nt, terminals = [nt] }) cs'
 
 -- AZ:NOTE: The second param below (Token) can/should be moved into the Input
 -- type, as it is meaningless for a nonterminal. But what about compatibility
@@ -262,7 +262,7 @@ happyDoAction :: Verifying
               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
-happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext}) cs) st sts stk
+happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk
   = DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
     DEBUG_TRACE("happyDoAction:inp=" ++ showHere v ++ "\n")
     case toks of -- Terminals
@@ -286,6 +286,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                                                ++ "\n")
                                    happyShift NotVerifying new_state i (mkNodeNt (HappyTerminal tk) Nothing [] tok) st sts stk
                                    where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
+        -- TODO: use lookupAction here
         where off    = indexShortOffAddr happyActOffsets st
               off_i  = PLUS(off,i)
               check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
@@ -303,8 +304,10 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                leftBreakdown verifying la inp st sts stk
           else
             -- TODO: extend the tables to use the stored non-terminal value instead
-            case mnext of
-              Just tok@(Tok i tk) ->
+            -- case mnext of
+            --   Just tok@(Tok i tk) ->
+            case mnt of
+              Just (IBOX(i)) ->
 -------------------------------
                 -- DEBUG_TRACE("nt:state: " ++ show IBOX(st) ++
                 --             ",\ttoken: " ++ show IBOX(i) ++
@@ -316,7 +319,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                                              else leftBreakdown NotVerifying la inp st sts stk
                       ILIT(-1)          -> DEBUG_TRACE("nt:accept. A\n")
                                              -- This can never happen
-                                             happyAccept i tk st sts stk
+                                             notHappyAtAll
                       n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
                                                                      ++ ")")
                                                          (happyReduceArr Happy_Data_Array.! rule) NotVerifying i inp st sts stk
@@ -324,8 +327,9 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                       n                 -> DEBUG_TRACE("shift, enter state "
                                                        ++ show IBOX(new_state)
                                                        ++ "\n")
-                                           happyShift Verifying new_state i (mkNodeNt (HappyTerminal tk) Nothing [] tok) st sts stk
+                                           happyShift Verifying new_state i (Node v []) st sts stk
                                            where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
+                -- TODO: use lookupAction here
                 where off    = indexShortOffAddr happyActOffsets st
                       off_i  = PLUS(off,i)
                       check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
@@ -448,6 +452,24 @@ shiftOrBreakdown new_state (inp@(Node v@(Val {last_terminal = mtok,here_nt = mnt
              then happyNewToken NotVerifying st sts stk
              else DEBUG_TRACE("shiftOrBreakdown:shifting\n")
                   happyNewToken NotVerifying new_state CONS(st,sts) (inp `HappyStk` stk)
+
+
+lookupAction' :: Int -> Int -> Int
+lookupAction' st' i' =
+  case (st',i') of
+   (IBOX(st), IBOX(i)) -> (IBOX(lookupAction st i))
+
+lookupAction :: FAST_INT -> FAST_INT -> FAST_INT
+lookupAction st i = action
+        where off    = indexShortOffAddr happyActOffsets st
+              off_i  = PLUS(off,i)
+              check  = if GTE(off_i,(ILIT(0) :: FAST_INT))
+                       then EQ(indexShortOffAddr happyCheck off_i, i)
+                       else False
+              action
+               | check     = indexShortOffAddr happyTable off_i
+               | otherwise = indexShortOffAddr happyDefActions st
+
 
 nextState' :: Int -> Int -> Int
 nextState' st' nt' =
