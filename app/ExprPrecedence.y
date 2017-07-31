@@ -2,7 +2,7 @@
 -- This file is (initially) based on the example in happy manual
 -- https://www.haskell.org/happy/doc/html/sec-using.html
 {-# LANGUAGE OverloadedStrings #-}
-module ExprSimple where
+module ExprPrecedence where
 
 import Data.Char
 import Data.Maybe

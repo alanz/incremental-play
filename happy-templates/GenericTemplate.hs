@@ -114,7 +114,8 @@ infixr 9 `HappyStk`
 data HappyStk a = HappyStk a (HappyStk a)
 
 -- AZ: following to come out of happy ProduceCode
-type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
+-- type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
+type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp
 
 type NodeVal = Val HappyAbsSynType Tok
 
