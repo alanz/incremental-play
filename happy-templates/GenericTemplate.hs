@@ -267,6 +267,9 @@ mkNodeNt x mnt gf cs nt
   = let Node v cs' = (mkNode x mnt gf cs)
     in Node (v { next_terminal = Just nt, last_terminal = Just nt, terminals = [nt] }) cs'
 
+isFragile :: (Node a b) -> Bool
+isFragile (Node v _) = grammarFragile v || leftFragile v || rightFragile v
+
 -- AZ:NOTE: The second param below (Token) can/should be moved into the Input
 -- type, as it is meaningless for a nonterminal. But what about compatibility
 -- with other happy options?
@@ -334,7 +337,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                     ",\tfragile: " ++ show (happyFragileState IBOX(st)) ++
                     ",\ttree: " ++ (take 20 $ show (here $ rootLabel inp)) ++
                     ",\taction: ")
-        if changed inp
+        if changed inp || isFragile inp
           then DEBUG_TRACE ("left breakdown.\n")
                leftBreakdown verifying la inp st sts stk
           else
@@ -374,9 +377,11 @@ leftBreakdown :: Verifying
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
 leftBreakdown verifying la inp@(Node v cs) st sts stk ts
-  = if null cs
-      then happyNewToken verifying st sts stk ts
-      else happyNewToken verifying st sts stk (cs ++ ts)
+  = case cs of
+      []    -> happyNewToken verifying st sts stk ts
+      (c:cs') -> if isFragile c
+                   then leftBreakdown verifying la c st sts stk (cs' ++ ts)
+                   else happyNewToken verifying st sts stk (cs ++ ts)
 
 rightBreakdown :: FAST_INT   -- ^ Current state
                -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
