@@ -60,11 +60,6 @@ newTree =
                & fromWithin traverse
                & downward root & focus %~ setChangedChild & upward
 
-               -- & downward branches
-               -- & fromWithin traverse
-               -- & tugs rightward 2
-               -- & downward root & focus %~ setChangedChild & upward
-
                & downward branches
                & fromWithin traverse
                & tugs rightward 1
@@ -76,7 +71,7 @@ newTree =
                & rezip
 
 changeVal :: NodeVal -> NodeVal
-changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenTimes ] Nothing Nothing
+changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenTimes ] Nothing Nothing False False False
 
 setChangedChild :: NodeVal -> NodeVal
 setChangedChild v = v { changedChild = True}

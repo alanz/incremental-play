@@ -131,7 +131,7 @@ data Verifying = Verifying | NotVerifying
 -- starting the parse
 
 #define HAPPYSTATESENTINEL  (ILIT(-1000))
-happyNodeSentinel = mkNode (HappyErrorToken (-1000)) Nothing []
+happyNodeSentinel = mkNode (HappyErrorToken (-1000)) Nothing False []
 
 happyParse :: FAST_INT -> [HappyInput] -> HappyIdentity HappyInput
 happyParse start_state = happyNewToken NotVerifying start_state CONS(HAPPYSTATESENTINEL,notHappyAtAll) (happyNodeSentinel `HappyStk` notHappyAtAll)
@@ -171,44 +171,83 @@ type Node a b = Tree (Val a b)
 -- instance (Show a, Show b) => Show (Node a b) where
 --   show (Node (Val cl cc h ts nt) cs) = intercalate " " ["Node",show cl, show cc,"(" ++ show h ++ ")",show cs,show ts, show nt]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Node a b) where
-  pretty (Node (Val cl cc h hnt ts nt lt) cs) = "Node" <+> pretty cl <+> pretty cc <+> parens (pretty nt) <+> parens (pretty lt)
-    <+> parens (pretty hnt)
+  pretty (Node (Val cl cc h hnt ts nt lt lf rf gf) cs)
+    = "Node" <+> pretty cl <+> pretty cc <+> parens (pretty nt) <+> parens (pretty lt)
+             <+> parens (pretty hnt)
+             <+> pretty lf <+> pretty rf <+> pretty gf
            <> line <> (indent 3 (pretty h))
            <> line <> (indent 4 (pretty cs))
            <> line <> (indent 4 (pretty ts))
 
+-- TODO: consider space-efficient storage of the Val structure. bitfields, what else?
 data Val a b = Val
-  { changedLocal  :: !Bool
-  , changedChild  :: !Bool -- ^set if any of the children have a change
-  , here          :: !a
-  , here_nt       :: !(Maybe Int)
-  , terminals     :: ![b]
-  , next_terminal :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
-  , last_terminal :: !(Maybe b)  -- ^ the rightmost terminal of the yield of the tree
+  { changedLocal   :: !Bool
+  , changedChild   :: !Bool -- ^set if any of the children have a change
+  , here           :: !a
+  , here_nt        :: !(Maybe Int)
+  , terminals      :: ![b]
+  , next_terminal  :: !(Maybe b)  -- ^ the leftmost terminal of the yield of the tree
+  , last_terminal  :: !(Maybe b)  -- ^ the rightmost terminal of the yield of the tree
+  , leftFragile    :: !Bool       -- ^ Fragile on leftmost edge
+  , rightFragile   :: !Bool       -- ^ Fragile on rightmost edge
+  , grammarFragile :: !Bool       -- ^ The grammar production used to produce
+                                  -- this node is fragile (Has a conflict, or
+                                  -- precedence)
   }
 instance (Show a, Show b) => Show (Val a b) where
-  show (Val cl cc h hnt ts nt lt)
+  show (Val cl cc h hnt ts nt lt lf rf gf)
     = unwords ["Val",show cl, show cc,"(" ++ show h ++ ")"
               ,"(" ++ show hnt ++ ")",show ts
-              , "(" ++ show nt ++ ")", "(" ++ show lt ++ ")"]
+              , "(" ++ show nt ++ ")", "(" ++ show lt ++ ")"
+              , show lf, show rf, show gf
+              ]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Val a b) where
-  pretty ((Val cl cc h hnt ts nt lt) )
+  pretty ((Val cl cc h hnt ts nt lt lf rf gf) )
     = "Val" <+> pretty cl <+> pretty cc <+> parens (pretty nt) <+> parens (pretty lt) <+> parens (pretty hnt)
+           <+> pretty lf <+> pretty rf <+> pretty gf
            <> line <> (indent 3 (pretty h))
            <> line <> (indent 4 (pretty ts))
 
 showHere :: (Show a, Show b) => Val a b -> String
-showHere Val { here = h, here_nt = Nothing, terminals = ts } = "T "                   ++ show h -- ++ " " ++ show ts
-showHere Val { here = h, here_nt = Just nt, terminals = ts } = "NT" ++ show nt ++ " " ++ show h -- ++ " " ++ show ts
+showHere v@(Val { here = h, here_nt = Nothing, terminals = ts  })
+  = showFragile v ++ "T "                   ++ show h -- ++ " " ++ show ts
+showHere v@(Val { here = h, here_nt = Just nt, terminals = ts  })
+  = showFragile v ++ "NT" ++ show nt ++ " " ++ show h -- ++ " " ++ show ts
 
-mkNode x mnt cs = Node (Val
-                    { here = x
-                    , here_nt = mnt
-                    , changedLocal = False, changedChild = False
-                    , terminals = []
-                    , next_terminal = getNextTerminal cs
-                    , last_terminal = getLastTerminal cs
-                    }) cs
+showFragile :: (Show a, Show b) => Val a b -> String
+showFragile Val { grammarFragile = g, leftFragile = l, rightFragile = r}
+  = concat ["[",mt "G" g, mt "L" l, mt "R" r, "] "]
+  where
+    mt str True  = str
+    mt _   False = ""
+
+mkNode x mnt gf cs
+  = Node (Val
+         { here = x
+         , here_nt = mnt
+         , changedLocal = False, changedChild = False
+         , terminals = []
+         , next_terminal = getNextTerminal cs
+         , last_terminal = getLastTerminal cs
+         , leftFragile   = goL cs
+         , rightFragile  = goR cs
+         , grammarFragile = gf
+         }) cs
+  where
+    goL [] = False
+    goL ((Node v _):cs')
+      = if grammarFragile v || leftFragile v
+          then True
+          else case next_terminal v of
+                 Nothing  -> goL cs'
+                 Just  _  -> False
+    goR [] = False
+    goR ((Node v _):cs')
+      = if grammarFragile v || rightFragile v
+          then True
+          else case last_terminal v of
+                 Nothing  -> goR cs'
+                 Just  _  -> False
 
 getNextTerminal :: [Node a b] -> Maybe b
 getNextTerminal [] = Nothing
@@ -224,8 +263,8 @@ getLastTerminal cs
       [] -> Nothing
       ls -> Just (last ls)
 
-mkNodeNt x mnt cs nt
-  = let Node v cs' = (mkNode x mnt cs)
+mkNodeNt x mnt gf cs nt
+  = let Node v cs' = (mkNode x mnt gf cs)
     in Node (v { next_terminal = Just nt, last_terminal = Just nt, terminals = [nt] }) cs'
 
 -- AZ:NOTE: The second param below (Token) can/should be moved into the Input
@@ -247,7 +286,7 @@ instance Pretty Tok
 
 type HappyInput = Node HappyAbsSynType Tok
 
-mkTokensNode tks = setTerminals (mkNode (HappyErrorToken (-5)) Nothing []) tks
+mkTokensNode tks = setTerminals (mkNode (HappyErrorToken (-5)) Nothing False []) tks
 
 setTerminals :: Node a b -> [b] -> Node a b
 setTerminals (Node v cs) ts = Node (v { terminals = ts}) cs
@@ -269,6 +308,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
     case toks of -- Terminals
       (tok@(Tok i tk):ts) ->
         DEBUG_TRACE("t:state: " ++ show IBOX(st) ++
+                    ",\tfragile: " ++ show fragile ++
                     ",\ttoken: " ++ show IBOX(i) ++
                     ",\taction: ")
         case action of
@@ -280,16 +320,18 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                                      happyAccept i tk st sts stk
               n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
                                                              ++ ")")
-                                                 (happyReduceArr Happy_Data_Array.! rule) NotVerifying i inp st sts stk
+                                                 (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk
                                                  where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
               n                 -> DEBUG_TRACE("shift, enter state "
                                                ++ show IBOX(new_state)
                                                ++ "\n")
-                                   happyShift NotVerifying new_state i (mkNodeNt (HappyTerminal tk) Nothing [] tok) st sts stk
+                                   happyShift NotVerifying new_state i (mkNodeNt (HappyTerminal tk) Nothing fragile [] tok) st sts stk
                                    where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
         where action = lookupAction st i
+              fragile = happyFragileState IBOX(st)
       _ -> -- Non-terminal input
         DEBUG_TRACE("nt:state: " ++ show IBOX(st) ++
+                    ",\tfragile: " ++ show (happyFragileState IBOX(st)) ++
                     ",\ttree: " ++ (take 20 $ show (here $ rootLabel inp)) ++
                     ",\taction: ")
         if changed inp
@@ -309,14 +351,16 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                                              notHappyAtAll
                       n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
                                                                      ++ ")")
-                                                         (happyReduceArr Happy_Data_Array.! rule) NotVerifying i inp st sts stk
+                                                         (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk
                                                          where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
                       n                 -> DEBUG_TRACE("shift, enter state "
                                                        ++ show IBOX(new_state)
                                                        ++ "\n")
-                                           happyShift Verifying new_state i (Node v []) st sts stk
+                                           happyShift Verifying new_state i (Node v' []) st sts stk
                                            where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
+                                                 v' = v { grammarFragile = fragile }
                 where action = lookupAction st i
+                      fragile = happyFragileState IBOX(st)
 -------------------------------
               Nothing -> DEBUG_TRACE ("mnext == Nothing.\n")
                           happyNewToken NotVerifying st sts stk
