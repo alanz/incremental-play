@@ -13,3 +13,10 @@
 /app/ExprSimple.hs
 /app/ExprSimpleOrig.hs
 /app/ExprPrecedence.hs
+/app/Repetitive.hs
+/ExprPrecedence-no-precedence-set.info
+/ExprPrecedence.info
+/ExprSimple-ShiftNonTerms.info
+/ExprSimpleOrig.info
+/Repetitive.info
+/app/MainRepetitive.hs

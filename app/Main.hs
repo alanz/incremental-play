@@ -96,10 +96,10 @@ newTree2 =
                & rezip
 
 changeVal :: NodeVal -> NodeVal
-changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenMinus ] Nothing Nothing
+changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenMinus ] Nothing Nothing False False False
 
 changeVal2 :: NodeVal -> NodeVal
-changeVal2 _ = Val True True (HappyTerminal (TokenInt 3)) Nothing [mkTok (TokenInt 3) ] (Just (mkTok (TokenInt 3))) (Just (mkTok (TokenInt 3)))
+changeVal2 _ = Val True True (HappyTerminal (TokenInt 3)) Nothing [mkTok (TokenInt 3) ] (Just (mkTok (TokenInt 3))) (Just (mkTok (TokenInt 3))) False False False
 
 setChangedChild :: NodeVal -> NodeVal
 setChangedChild v = v { changedChild = True}

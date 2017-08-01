@@ -102,7 +102,8 @@ happyTrace string expr = Happy_System_IO_Unsafe.unsafePerformIO $ do
 #define TOK_ERR_INT ILIT(-10)
 mkTok t = Tok TOK_ERR_INT t
 -- nullTok = Tok TOK_ERR_INT notHappyAtAll
-nullTok = Tok TOK_ERR_INT TokenDiv
+-- nullTok = Tok TOK_ERR_INT TokenPlus
+nullTok = Tok TOK_ERR_INT TokenA
 #define TERMINAL(i) (i)
 #define TOKEN(i) ((i))
 #else
@@ -115,7 +116,8 @@ data HappyStk a = HappyStk a (HappyStk a)
 
 -- AZ: following to come out of happy ProduceCode
 -- type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
-type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp
+-- type HappyAbsSynType = HappyAbsSyn () () () Exp Exp
+type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B ()
 
 type NodeVal = Val HappyAbsSynType Tok
 
@@ -343,6 +345,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
           else
             case mnt of
               Just (IBOX(i)) ->
+                DEBUG_TRACE("nt:" ++ show (IBOX(i)) ++ ",actionv:" ++ show (IBOX(action)) ++ ":")
 -------------------------------
                 case action of
                       ILIT(0)           -> DEBUG_TRACE("fail.\n")
