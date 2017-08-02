@@ -17,7 +17,8 @@ import Data.Text.Prettyprint.Doc.Render.Terminal
 
 %token
       'a'             { TokenA }
-      'b'             { TokenB }
+      'b'             { TokenBL }
+      'B'             { TokenBU }
       'c'             { TokenC }
 
 %%
@@ -35,15 +36,16 @@ tree : Root { $1 }
 
 -- -------------------------------------
 
-Root : A Bs C { Root $2 }
+Root : A Bs C { Root (reverse $2) }
 
 A : 'a'           { () }
   | {- nothing -} { () }
 
-Bs : B Bs          { $1:$2 }
+Bs : Bs B          { $2:$1 }
   | {- nothing -}  { [] }
 
-B : 'b'            { B }
+B : 'b'            { BL }
+  | 'B'            { BU }
 
 C : 'c'         { () }
   | {- nothing -} { () }
@@ -54,12 +56,13 @@ parseError _ = error "Parse error"
 data Root = Root [B]
       deriving Show
 
-data B = B
+data B = BL | BU
      deriving Show
 
 data Token
       = TokenA
-      | TokenB
+      | TokenBL
+      | TokenBU
       | TokenC
  deriving Show
 
@@ -71,9 +74,10 @@ lexer str = [mkTokensNode (lexer' str)]
 lexer' [] = []
 lexer' (c:cs)
       | isSpace c = lexer' cs
-lexer' ('a':cs) = mkTok TokenA : lexer' cs
-lexer' ('b':cs) = mkTok TokenB : lexer' cs
-lexer' ('c':cs) = mkTok TokenC : lexer' cs
+lexer' ('a':cs) = mkTok TokenA  : lexer' cs
+lexer' ('b':cs) = mkTok TokenBL : lexer' cs
+lexer' ('B':cs) = mkTok TokenBU : lexer' cs
+lexer' ('c':cs) = mkTok TokenC  : lexer' cs
 lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
 

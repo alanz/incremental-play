@@ -323,7 +323,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                                      else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk
               ILIT(-1)          -> DEBUG_TRACE("accept. A\n")
                                      happyAccept i tk st sts stk
-              n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
+              n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce (rule " ++ show rule
                                                              ++ ")")
                                                  (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk
                                                  where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
@@ -355,14 +355,14 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                       ILIT(-1)          -> DEBUG_TRACE("nt:accept. A\n")
                                              -- This can never happen
                                              notHappyAtAll
-                      n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce A (rule " ++ show rule
+                      n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce (rule " ++ show rule
                                                                      ++ ")")
                                                          (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk
                                                          where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
                       n                 -> DEBUG_TRACE("shift, enter state "
                                                        ++ show IBOX(new_state)
                                                        ++ "\n")
-                                           happyShift Verifying new_state i (Node v' []) st sts stk
+                                           happyShift Verifying new_state i (Node v' cs) st sts stk
                                            where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
                                                  v' = v { grammarFragile = fragile }
                 where action = lookupAction st i
