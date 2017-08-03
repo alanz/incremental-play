@@ -1,5 +1,10 @@
 
-all : app/Repetitive.y happy-templates/HappyTemplate-incremental-ghc-debug
+repetetive2 : app/Repetitive2.y happy-templates/HappyTemplate-incremental-ghc-debug
+	happy --ghc --incremental --debug --template=./happy-templates --info=Repetitive2.info \
+    --lr0 --action --goto --lookaheads \
+    app/Repetitive2.y
+
+repetetive : app/Repetitive.y happy-templates/HappyTemplate-incremental-ghc-debug
 	happy --ghc --incremental --debug --template=./happy-templates --info=Repetitive.info \
     --lr0 --action --goto --lookaheads \
     app/Repetitive.y

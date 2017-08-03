@@ -117,7 +117,22 @@ data HappyStk a = HappyStk a (HappyStk a)
 -- AZ: following to come out of happy ProduceCode
 -- type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
 -- type HappyAbsSynType = HappyAbsSyn () () () Exp Exp
-type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B ()
+-- type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B ()
+type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B () (BinaryT B)
+{-
+7 = 4
+5 = ()
+6 = ()
+8 = 7 = Root
+10 = [B]
+9 = ()
+13 = BTree B
+10 = [B]
+11 = B
+12 = ()
+13 = BTree B
+-}
+
 
 type NodeVal = Val HappyAbsSynType Tok
 
@@ -141,7 +156,10 @@ happyParse start_state = happyNewToken NotVerifying start_state CONS(HAPPYSTATES
 showStacks :: Happy_IntList -> HappyStk HappyInput -> String
 showStacks (CONS(HAPPYSTATESENTINEL,_)) _ = "[]"
 showStacks (CONS(st,sts)) ((Node v _) `HappyStk` stks)
-  = show (IBOX(st),take 30 $ showHere v) ++ ":" ++ showStacks sts stks
+  = show (IBOX(st),take 40 $ showHere v) ++ ":" ++ showStacks sts stks
+
+showInputQ :: [HappyInput] -> String
+showInputQ is = "[" ++ intercalate "," (map (showHere . rootLabel) is) ++ "]"
 
 showInput :: [HappyInput] -> String
 showInput ts = "[" ++ intercalate "," (map (showHere . rootLabel) ts) ++ "]"
@@ -197,11 +215,12 @@ data Val a b = Val
                                   -- precedence)
   }
 instance (Show a, Show b) => Show (Val a b) where
-  show (Val cl cc h hnt ts nt lt lf rf gf)
-    = unwords ["Val",show cl, show cc,"(" ++ show h ++ ")"
-              ,"(" ++ show hnt ++ ")",show ts
+  show v@(Val cl cc h hnt ts nt lt lf rf gf)
+    = unwords ["Val",showChanged v
+              , showFragile v
+              , "(" ++ show h ++ ")"
+              , "(" ++ show hnt ++ ")",show ts
               , "(" ++ show nt ++ ")", "(" ++ show lt ++ ")"
-              , show lf, show rf, show gf
               ]
 instance (Show a, Pretty a, Show b, Pretty b) => Pretty (Val a b) where
   pretty ((Val cl cc h hnt ts nt lt lf rf gf) )
@@ -216,9 +235,16 @@ showHere v@(Val { here = h, here_nt = Nothing, terminals = ts  })
 showHere v@(Val { here = h, here_nt = Just nt, terminals = ts  })
   = showFragile v ++ "NT" ++ show nt ++ " " ++ show h -- ++ " " ++ show ts
 
+showChanged :: (Show a, Show b) => Val a b -> String
+showChanged Val { changedLocal = l, changedChild = c }
+  = concat ["[ch:",mt "L" l, mt "C" c, "]"]
+  where
+    mt str True  = str
+    mt _   False = ""
+
 showFragile :: (Show a, Show b) => Val a b -> String
 showFragile Val { grammarFragile = g, leftFragile = l, rightFragile = r}
-  = concat ["[",mt "G" g, mt "L" l, mt "R" r, "] "]
+  = concat ["[fr:",mt "G" g, mt "L" l, mt "R" r, "]"]
   where
     mt str True  = str
     mt _   False = ""
@@ -307,8 +333,9 @@ happyDoAction :: Verifying
               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
-happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk
-  = DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
+happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk tks
+  = DEBUG_TRACE("happyDoAction:tks=" ++ showInputQ tks ++ "\n")
+    DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
     DEBUG_TRACE("happyDoAction:inp=" ++ showHere v ++ "\n")
     case toks of -- Terminals
       (tok@(Tok i tk):ts) ->
@@ -317,31 +344,31 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                     ",\ttoken: " ++ show IBOX(i) ++
                     ",\taction: ")
         case action of
-              ILIT(0)           -> DEBUG_TRACE("fail.\n")
-                                   if verifying == Verifying
-                                     then rightBreakdown st sts stk
-                                     else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk
-              ILIT(-1)          -> DEBUG_TRACE("accept. A\n")
-                                     happyAccept i tk st sts stk
-              n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce (rule " ++ show rule
-                                                             ++ ")")
-                                                 (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk
-                                                 where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
-              n                 -> DEBUG_TRACE("shift, enter state "
-                                               ++ show IBOX(new_state)
-                                               ++ "\n")
-                                   happyShift NotVerifying new_state i (mkNodeNt (HappyTerminal tk) Nothing fragile [] tok) st sts stk
-                                   where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
+              ILIT(0)   -> DEBUG_TRACE("fail.\n")
+                           if verifying == Verifying
+                             then rightBreakdown st sts stk tks
+                             else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk tks
+              ILIT(-1)  -> DEBUG_TRACE("accept. A\n")
+                             happyAccept i tk st sts stk tks
+              n | LT(n,(ILIT(0) :: FAST_INT))
+                        -> DEBUG_TRACE("reduce (rule " ++ show rule ++ ")")
+                           (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk tks
+                            where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
+              n         -> DEBUG_TRACE("shift, enter state "
+                                       ++ show IBOX(new_state)
+                                       ++ "\n")
+                           happyShift NotVerifying new_state i (mkNodeNt (HappyTerminal tk) Nothing fragile [] tok) st sts stk tks
+                           where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
         where action = lookupAction st i
               fragile = happyFragileState IBOX(st)
       _ -> -- Non-terminal input
         DEBUG_TRACE("nt:state: " ++ show IBOX(st) ++
                     ",\tfragile: " ++ show (happyFragileState IBOX(st)) ++
-                    ",\ttree: " ++ (take 20 $ show (here $ rootLabel inp)) ++
+                    ",\ttree: " ++ (take 35 $ show (here $ rootLabel inp)) ++
                     ",\taction: ")
         if changed inp || isFragile inp
           then DEBUG_TRACE ("left breakdown.\n")
-               leftBreakdown verifying la inp st sts stk
+               leftBreakdown verifying la inp st sts stk tks
           else
             case mnt of
               Just (IBOX(i)) ->
@@ -350,26 +377,26 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                 case action of
                       ILIT(0)           -> DEBUG_TRACE("fail.\n")
                                            if null cs
-                                             then happyNewToken verifying st sts stk
-                                             else leftBreakdown NotVerifying la inp st sts stk
+                                             then happyNewToken verifying st sts stk tks
+                                             else leftBreakdown NotVerifying la inp st sts stk tks
                       ILIT(-1)          -> DEBUG_TRACE("nt:accept. A\n")
                                              -- This can never happen
                                              notHappyAtAll
                       n | LT(n,(ILIT(0) :: FAST_INT)) -> DEBUG_TRACE("reduce (rule " ++ show rule
                                                                      ++ ")")
-                                                         (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk
+                                                         (happyReduceArr Happy_Data_Array.! rule) NotVerifying fragile i inp st sts stk tks
                                                          where rule = IBOX(NEGATE(PLUS(n,(ILIT(1) :: FAST_INT))))
                       n                 -> DEBUG_TRACE("shift, enter state "
                                                        ++ show IBOX(new_state)
                                                        ++ "\n")
-                                           happyShift Verifying new_state i (Node v' cs) st sts stk
+                                           happyShift Verifying new_state i (Node v' cs) st sts stk tks
                                            where new_state = MINUS(n,(ILIT(1) :: FAST_INT))
                                                  v' = v { grammarFragile = fragile }
                 where action = lookupAction st i
                       fragile = happyFragileState IBOX(st)
 -------------------------------
               Nothing -> DEBUG_TRACE ("mnext == Nothing.\n")
-                          happyNewToken NotVerifying st sts stk
+                          happyNewToken NotVerifying st sts stk tks
 
 
 leftBreakdown :: Verifying
@@ -380,11 +407,19 @@ leftBreakdown :: Verifying
               -> [HappyInput] -- ^ Input being processed
               -> HappyIdentity HappyInput
 leftBreakdown verifying la inp@(Node v cs) st sts stk ts
-  = case cs of
-      []    -> happyNewToken verifying st sts stk ts
+  = DEBUG_TRACE("leftBreakdown:ts=" ++ showInputQ ts ++ "\n")
+    DEBUG_TRACE("leftBreakdown:inp=" ++ showHere v ++ "\n")
+    case cs of
+      []    -> DEBUG_TRACE("leftBreakdown:no children\n")
+               -- happyNewToken verifying st sts stk ts
+               -- happyNewToken verifying st sts stk (inp':ts)
+               happyDoAction verifying la inp' st sts stk ts
+               where inp' = Node (v { changedLocal = False, changedChild = False}) cs
       (c:cs') -> if isFragile c
-                   then leftBreakdown verifying la c st sts stk (cs' ++ ts)
-                   else happyNewToken verifying st sts stk (cs ++ ts)
+                   then DEBUG_TRACE("leftBreakdown:fragile:" ++ showHere (rootLabel c) ++ "\n")
+                        leftBreakdown verifying la c st sts stk (cs' ++ ts)
+                   else DEBUG_TRACE("leftBreakdown:not fragile\n")
+                        happyNewToken verifying      st sts stk (cs  ++ ts)
 
 rightBreakdown :: FAST_INT   -- ^ Current state
                -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
