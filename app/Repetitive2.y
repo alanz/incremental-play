@@ -116,7 +116,7 @@ data Token
 
 
 
-lexer :: String -> [HappyInput]
+-- lexer :: String -> [HappyInput]
 lexer str = [mkTokensNode (lexer' str)]
 
 lexer' [] = []

@@ -26,10 +26,10 @@ main = do
   putStr $ drawTree $ fmap show p'
   return ()
 
-ptree :: HappyInput
+-- ptree :: HappyInput
 ptree = (calc . lexer) "a BbDd c"
 
-zipperTree :: Top :>> HappyInput
+-- zipperTree :: Top :>> HappyInput
 zipperTree = zipper ptree
 
 foo :: IO ()

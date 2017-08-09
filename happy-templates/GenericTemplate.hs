@@ -150,18 +150,18 @@ data Verifying = Verifying | NotVerifying
 #define HAPPYSTATESENTINEL  (ILIT(-1000))
 happyNodeSentinel = mkNode (HappyErrorToken (-1000)) Nothing False []
 
-happyParse :: FAST_INT -> [HappyInput] -> HappyIdentity HappyInput
+-- happyParse :: FAST_INT -> [HappyInput] -> HappyIdentity HappyInput
 happyParse start_state = happyNewToken NotVerifying start_state CONS(HAPPYSTATESENTINEL,notHappyAtAll) (happyNodeSentinel `HappyStk` notHappyAtAll)
 
-showStacks :: Happy_IntList -> HappyStk HappyInput -> String
+-- showStacks :: Happy_IntList -> HappyStk HappyInput -> String
 showStacks (CONS(HAPPYSTATESENTINEL,_)) _ = "[]"
 showStacks (CONS(st,sts)) ((Node v _) `HappyStk` stks)
   = show (IBOX(st),take 40 $ showHere v) ++ ":" ++ showStacks sts stks
 
-showInputQ :: [HappyInput] -> String
+-- showInputQ :: [HappyInput] -> String
 showInputQ is = "[" ++ intercalate "," (map (showHere . rootLabel) is) ++ "]"
 
-showInput :: [HappyInput] -> String
+-- showInput :: [HappyInput] -> String
 showInput ts = "[" ++ intercalate "," (map (showHere . rootLabel) ts) ++ "]"
 
 -----------------------------------------------------------------------------
@@ -315,7 +315,7 @@ data Tok = Tok FAST_INT Token
   deriving Show
 instance Pretty Tok
 
-type HappyInput = Node HappyAbsSynType Tok
+-- type HappyInput = Node HappyAbsSynType Tok
 
 mkTokensNode tks = setTerminals (mkNode (HappyErrorToken (-5)) Nothing False []) tks
 
@@ -325,14 +325,13 @@ setTerminals (Node v cs) ts = Node (v { terminals = ts}) cs
 getTerminals :: Node a b -> [b]
 getTerminals (Node v cs) = terminals v
 
--- old: happyDoAction :: TokenId -> Token -> State -> StateStack -> ItemStack -> [Tokens]
-happyDoAction :: Verifying
-              -> FAST_INT   -- ^ Current lookahead token number
-              -> HappyInput -- ^ input being processed. "parse stack" from the paper  Same as first item on input list?
-              -> FAST_INT   -- ^ Current state
-              -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
-              -> [HappyInput] -- ^ Input being processed
-              -> HappyIdentity HappyInput
+-- happyDoAction :: Verifying
+--               -> FAST_INT   -- ^ Current lookahead token number
+--               -> HappyInput -- ^ input being processed. "parse stack" from the paper  Same as first item on input list?
+--               -> FAST_INT   -- ^ Current state
+--               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
+--               -> [HappyInput] -- ^ Input being processed
+--               -> HappyIdentity HappyInput
 happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk tks
   = DEBUG_TRACE("happyDoAction:tks=" ++ showInputQ tks ++ "\n")
     DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
@@ -399,13 +398,13 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
                           happyNewToken NotVerifying st sts stk tks
 
 
-leftBreakdown :: Verifying
-              -> FAST_INT   -- ^ Current lookahead token number
-              -> HappyInput -- ^ input being processed. "parse stack" from the paper Same as first item on input list?
-              -> FAST_INT   -- ^ Current state
-              -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
-              -> [HappyInput] -- ^ Input being processed
-              -> HappyIdentity HappyInput
+-- leftBreakdown :: Verifying
+--               -> FAST_INT   -- ^ Current lookahead token number
+--               -> HappyInput -- ^ input being processed. "parse stack" from the paper Same as first item on input list?
+--               -> FAST_INT   -- ^ Current state
+--               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
+--               -> [HappyInput] -- ^ Input being processed
+--               -> HappyIdentity HappyInput
 leftBreakdown verifying la inp@(Node v cs) st sts stk ts
   = DEBUG_TRACE("leftBreakdown:ts=" ++ showInputQ ts ++ "\n")
     DEBUG_TRACE("leftBreakdown:inp=" ++ showHere v ++ "\n")
@@ -421,10 +420,10 @@ leftBreakdown verifying la inp@(Node v cs) st sts stk ts
                    else DEBUG_TRACE("leftBreakdown:not fragile\n")
                         happyNewToken verifying      st sts stk (cs  ++ ts)
 
-rightBreakdown :: FAST_INT   -- ^ Current state
-               -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
-               -> [HappyInput] -- ^ Input being processed
-               -> HappyIdentity HappyInput
+-- rightBreakdown :: FAST_INT   -- ^ Current state
+--                -> Happy_IntList -> HappyStk HappyInput -- ^ Current state and shifted item stack
+--                -> [HappyInput] -- ^ Input being processed
+--                -> HappyIdentity HappyInput
 rightBreakdown st sts@(CONS(sts1,stss)) stk@(stk1@(Node v cs) `HappyStk` stks)
   -- Break down the right hand edge of the top of the parse stack until it is
   -- the last_terminal value of the original.
@@ -448,7 +447,7 @@ rightBreakdown st sts@(CONS(sts1,stss)) stk@(stk1@(Node v cs) `HappyStk` stks)
               where
                 (st',sts',stk') = foldl' go (IBOX(sts1),stss,stks) cs
                 !(IBOX(st2)) = st'
-                go :: (Int, Happy_IntList, HappyStk HappyInput) -> HappyInput -> (Int, Happy_IntList, HappyStk HappyInput)
+                -- go :: (Int, Happy_IntList, HappyStk HappyInput) -> HappyInput -> (Int, Happy_IntList, HappyStk HappyInput)
                 go  (IBOX(st), sts, stk) c@(Node v@(Val {last_terminal = mtok,here_nt = mnt}) _)
                   = DEBUG_TRACE("rightBreakdown:go:(st,v)=" ++ show (IBOX(st),take 30 $ showHere v) ++ "\n")
                     case (mnt, mtok) of
@@ -514,10 +513,10 @@ nextStateShift st i =
          | check     = indexShortOffAddr happyTable off_i
          | otherwise = indexShortOffAddr happyDefActions st
 
-changed :: HappyInput -> Bool
+-- changed :: HappyInput -> Bool
 changed (Node (Val { changedLocal = cl, changedChild = cc}) _) = cl || cc
 
-hasYield :: HappyInput -> Bool
+-- hasYield :: HappyInput -> Bool
 hasYield (Node (Val { last_terminal = mlt}) _) = isJust mlt
 #endif /* HAPPY_INCR */
 
@@ -599,15 +598,15 @@ newtype HappyState b c = HappyState
 -----------------------------------------------------------------------------
 -- Shifting a token
 
-happyShift :: Verifying
-           -> FAST_INT  -- new state
-           -> FAST_INT  --  Current lookahead token number
-           -> HappyInput -- current input / "parse tree"
-           -> FAST_INT   -- current state
-           -> Happy_IntList
-           -> HappyStk HappyInput
-           -> [HappyInput]
-           -> HappyIdentity HappyInput
+-- happyShift :: Verifying
+--            -> FAST_INT  -- new state
+--            -> FAST_INT  --  Current lookahead token number
+--            -> HappyInput -- current input / "parse tree"
+--            -> FAST_INT   -- current state
+--            -> Happy_IntList
+--            -> HappyStk HappyInput
+--            -> [HappyInput]
+--            -> HappyIdentity HappyInput
 happyShift verifying new_state (TERMINAL(ERROR_TOK)) inp st sts stk@(x `HappyStk` _) =
      let i = GET_ERROR_TOKEN(x) in
 --     trace "shifting the error token" $
@@ -619,63 +618,63 @@ happyShift verifying new_state i inp st sts stk =
 
 -- happyReduce is specialised for the common cases.
 
-happySpecReduce_0 :: Verifying
-                  -> FAST_INT   -- Non terminal to end up on TOS
-                  -> HappyInput -- function from TOS items to new TOS
-                  -> FAST_INT   -- input token value
-                  -> HappyInput
-                  -> FAST_INT
-                  -> Happy_IntList
-                  -> HappyStk HappyInput
-                  -> [HappyInput]
-                  -> HappyIdentity HappyInput
+-- happySpecReduce_0 :: Verifying
+--                   -> FAST_INT   -- Non terminal to end up on TOS
+--                   -> HappyInput -- function from TOS items to new TOS
+--                   -> FAST_INT   -- input token value
+--                   -> HappyInput
+--                   -> FAST_INT
+--                   -> Happy_IntList
+--                   -> HappyStk HappyInput
+--                   -> [HappyInput]
+--                   -> HappyIdentity HappyInput
 happySpecReduce_0 am nt fn ERROR_TOK inp st sts stk
      = happyFail [] ERROR_TOK inp st sts stk
 happySpecReduce_0 am nt fn j inp st@(HAPPYSTATE(action)) sts stk
      = GOTO(action) am nt j inp st CONS(st,sts) (fn `HappyStk` stk)
 
-happySpecReduce_1 :: Verifying
-                  -> FAST_INT
-                  -> (HappyInput -> HappyInput)
-                  -> FAST_INT
-                  -> HappyInput
-                  -> FAST_INT
-                  -> Happy_IntList
-                  -> HappyStk HappyInput
-                  -> [HappyInput]
-                  -> HappyIdentity HappyInput
+-- happySpecReduce_1 :: Verifying
+--                   -> FAST_INT
+--                   -> (HappyInput -> HappyInput)
+--                   -> FAST_INT
+--                   -> HappyInput
+--                   -> FAST_INT
+--                   -> Happy_IntList
+--                   -> HappyStk HappyInput
+--                   -> [HappyInput]
+--                   -> HappyIdentity HappyInput
 happySpecReduce_1 am i fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
 happySpecReduce_1 am nt fn j tk _ sts@(CONS(st@HAPPYSTATE(action),_)) (v1`HappyStk`stk')
      = let !r = fn v1 in -- TODO:AZ strictness?
        happySeq r (GOTO(action) am nt j tk st sts (r `HappyStk` stk'))
 
-happySpecReduce_2 :: Verifying
-                  -> FAST_INT
-                  -> (HappyInput -> HappyInput -> HappyInput)
-                  -> FAST_INT
-                  -> HappyInput
-                  -> FAST_INT
-                  -> Happy_IntList
-                  -> HappyStk HappyInput
-                  -> [HappyInput]
-                  -> HappyIdentity HappyInput
+-- happySpecReduce_2 :: Verifying
+--                   -> FAST_INT
+--                   -> (HappyInput -> HappyInput -> HappyInput)
+--                   -> FAST_INT
+--                   -> HappyInput
+--                   -> FAST_INT
+--                   -> Happy_IntList
+--                   -> HappyStk HappyInput
+--                   -> [HappyInput]
+--                   -> HappyIdentity HappyInput
 happySpecReduce_2 am i fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
 happySpecReduce_2 am nt fn j tk _ CONS(_,sts@(CONS(st@HAPPYSTATE(action),_))) (v1`HappyStk`v2`HappyStk`stk')
      = let !r = fn v1 v2 in -- TODO:AZ strictness?
        happySeq r (GOTO(action) am nt j tk st sts (r `HappyStk` stk'))
 
-happySpecReduce_3 :: Verifying
-                  -> FAST_INT
-                  -> (HappyInput -> HappyInput -> HappyInput -> HappyInput)
-                  -> FAST_INT
-                  -> HappyInput
-                  -> FAST_INT
-                  -> Happy_IntList
-                  -> HappyStk HappyInput
-                  -> [HappyInput]
-                  -> HappyIdentity HappyInput
+-- happySpecReduce_3 :: Verifying
+--                   -> FAST_INT
+--                   -> (HappyInput -> HappyInput -> HappyInput -> HappyInput)
+--                   -> FAST_INT
+--                   -> HappyInput
+--                   -> FAST_INT
+--                   -> Happy_IntList
+--                   -> HappyStk HappyInput
+--                   -> [HappyInput]
+--                   -> HappyIdentity HappyInput
 happySpecReduce_3 am i fn ERROR_TOK tk st sts stk
      = happyFail [] ERROR_TOK tk st sts stk
 happySpecReduce_3 am nt fn j tk _ CONS(_,CONS(_,sts@(CONS(st@HAPPYSTATE(action),_)))) (v1`HappyStk`v2`HappyStk`v3`HappyStk`stk')
@@ -690,17 +689,17 @@ happyReduce k am nt fn j tk st sts stk
                 let !r = fn stk in  -- it doesn't hurt to always seq here...
                 happyDoSeq r (GOTO(action) am nt j tk st1 sts1 r)
 
-happyMonadReduce :: FAST_INT      -- number of items to remove from stack
-                 -> Verifying
-                 -> FAST_INT
-                 -> (Happy_IntList -> HappyStk HappyInput -> HappyIdentity HappyInput)
-                 -> FAST_INT               -- input token
-                 -> HappyInput             -- input value being processed / "parse stack"
-                 -> FAST_INT               -- st  : current state
-                 -> Happy_IntList          -- sts : state stack
-                 -> HappyStk HappyInput    -- stk : shift stack
-                 -> [HappyInput]           -- remaining input
-                 -> HappyIdentity HappyInput
+-- happyMonadReduce :: FAST_INT      -- number of items to remove from stack
+--                  -> Verifying
+--                  -> FAST_INT
+--                  -> (Happy_IntList -> HappyStk HappyInput -> HappyIdentity HappyInput)
+--                  -> FAST_INT               -- input token
+--                  -> HappyInput             -- input value being processed / "parse stack"
+--                  -> FAST_INT               -- st  : current state
+--                  -> Happy_IntList          -- sts : state stack
+--                  -> HappyStk HappyInput    -- stk : shift stack
+--                  -> [HappyInput]           -- remaining input
+--                  -> HappyIdentity HappyInput
 happyMonadReduce k am nt fn ERROR_TOK inp st sts stk
      = happyFail [] ERROR_TOK inp st sts stk
 happyMonadReduce k am nt fn j inp st sts stk =
@@ -735,14 +734,14 @@ happyDropStk n (x `HappyStk` xs) = happyDropStk MINUS(n,(ILIT(1)::FAST_INT)) xs
 -- Moving to a new state after a reduction
 
 #if defined(HAPPY_INCR)
-happyGoto :: Verifying -- am
-          -> FAST_INT       -- non-terminal on TOS
-          -> FAST_INT       -- token int corresponding to the input
-          -> HappyInput     -- was tk, now inp
-          -> FAST_INT       -- st
-          -> Happy_IntList -> HappyStk HappyInput
-          -> [HappyInput]
-          -> HappyIdentity HappyInput
+-- happyGoto :: Verifying -- am
+--           -> FAST_INT       -- non-terminal on TOS
+--           -> FAST_INT       -- token int corresponding to the input
+--           -> HappyInput     -- was tk, now inp
+--           -> FAST_INT       -- st
+--           -> Happy_IntList -> HappyStk HappyInput
+--           -> [HappyInput]
+--           -> HappyIdentity HappyInput
 happyGoto am nt j inp st =
    DEBUG_TRACE(", goto state " ++ show IBOX(new_state) ++ "\n")
    happyDoAction am j inp new_state
@@ -764,14 +763,14 @@ happyGoto action j tk st = action j j tk (HappyState action)
 -- Error recovery (ERROR_TOK is the error token)
 
 -- parse error if we are in recovery and we fail again
-happyFail :: [String]
-          -> FAST_INT -- input token value
-          -> HappyInput -- input
-          -> FAST_INT -- current state
-          -> Happy_IntList
-          -> HappyStk HappyInput
-          -> [HappyInput]
-          -> HappyIdentity HappyInput
+-- happyFail :: [String]
+--           -> FAST_INT -- input token value
+--           -> HappyInput -- input
+--           -> FAST_INT -- current state
+--           -> Happy_IntList
+--           -> HappyStk HappyInput
+--           -> [HappyInput]
+--           -> HappyIdentity HappyInput
 happyFail explist ERROR_TOK inp old_st _ stk@(x `HappyStk` _) =
      let i = GET_ERROR_TOKEN(x) in
 --      trace "failing" $
