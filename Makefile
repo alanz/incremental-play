@@ -1,3 +1,4 @@
+all: repetetive2 repetetive precedence simple
 
 repetetive2 : app/Repetitive2.y happy-templates/HappyTemplate-incremental-ghc-debug
 	happy --ghc --incremental --debug --template=./happy-templates --info=Repetitive2.info \

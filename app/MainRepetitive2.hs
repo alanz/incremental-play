@@ -44,7 +44,7 @@ foo =
   (Int 1)
   (Times (Int 2) (Int 3)))
 -}
-newTree :: Tree NodeVal
+-- newTree :: Tree NodeVal
 newTree =
     zipperTree
                & downward root & focus %~ setChangedChild & upward
@@ -99,13 +99,13 @@ newTree =
                & focus %~ changeVal
                & rezip
 
-changeVal :: NodeVal -> NodeVal
+-- changeVal :: NodeVal -> NodeVal
 -- changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenBU ] Nothing Nothing False False False
 changeVal _    = Val True True (HappyTerminal TokenBU) Nothing [mkTok TokenBU] Nothing Nothing False False False
 
 changeChild (Node v cs) = Node (changeVal v) []
 
-setChangedChild :: NodeVal -> NodeVal
+-- setChangedChild :: NodeVal -> NodeVal
 setChangedChild v = v { changedChild = True}
 
 showTree :: Show a => Tree a -> IO ()

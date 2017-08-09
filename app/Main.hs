@@ -27,10 +27,10 @@ main = do
   putStr $ drawTree $ fmap show p'
   return ()
 
-ptree :: HappyInput
+-- ptree :: HappyInput
 ptree = (calc . lexer) "1 + 2"
 
-zipperTree :: Top :>> HappyInput
+-- zipperTree :: Top :>> HappyInput
 zipperTree = zipper ptree
 
 foo :: IO ()
@@ -39,7 +39,7 @@ foo = putStrLn $ show $
     -- zipperTree & downward root & view focus
     newTree
 
-newTree :: Tree NodeVal
+-- newTree :: Tree NodeVal
 newTree =
     zipperTree
                & downward root & focus %~ setChangedChild & upward
@@ -63,7 +63,7 @@ newTree =
                & focus %~ changeVal
                & rezip
 
-newTree2 :: Tree NodeVal
+-- newTree2 :: Tree NodeVal
 newTree2 =
     zipperTree
                & downward root & focus %~ setChangedChild & upward
@@ -95,13 +95,13 @@ newTree2 =
                & focus %~ changeVal2
                & rezip
 
-changeVal :: NodeVal -> NodeVal
+-- changeVal :: NodeVal -> NodeVal
 changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenMinus ] Nothing Nothing False False False
 
-changeVal2 :: NodeVal -> NodeVal
+-- changeVal2 :: NodeVal -> NodeVal
 changeVal2 _ = Val True True (HappyTerminal (TokenInt 3)) Nothing [mkTok (TokenInt 3) ] (Just (mkTok (TokenInt 3))) (Just (mkTok (TokenInt 3))) False False False
 
-setChangedChild :: NodeVal -> NodeVal
+-- setChangedChild :: NodeVal -> NodeVal
 setChangedChild v = v { changedChild = True}
 
 showTree :: Show a => Tree a -> IO ()

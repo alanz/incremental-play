@@ -103,7 +103,7 @@ happyTrace string expr = Happy_System_IO_Unsafe.unsafePerformIO $ do
 mkTok t = Tok TOK_ERR_INT t
 -- nullTok = Tok TOK_ERR_INT notHappyAtAll
 -- nullTok = Tok TOK_ERR_INT TokenPlus
-nullTok = Tok TOK_ERR_INT TokenA
+-- nullTok = Tok TOK_ERR_INT TokenA
 #define TERMINAL(i) (i)
 #define TOKEN(i) ((i))
 #else
@@ -118,7 +118,7 @@ data HappyStk a = HappyStk a (HappyStk a)
 -- type HappyAbsSynType = HappyAbsSyn Exp () () Exp Exp Term Factor
 -- type HappyAbsSynType = HappyAbsSyn () () () Exp Exp
 -- type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B ()
-type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B () (BinaryT B)
+-- type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B () (BinaryT B)
 {-
 7 = 4
 5 = ()
@@ -134,9 +134,9 @@ type HappyAbsSynType = HappyAbsSyn Root () () Root Root () [B] B () (BinaryT B)
 -}
 
 
-type NodeVal = Val HappyAbsSynType Tok
+-- type NodeVal = Val HappyAbsSynType Tok
 
-instance Pretty HappyAbsSynType
+-- instance Pretty HappyAbsSynType
 
 data DoACtionMode = Normal | AllReductions
                   deriving Eq
