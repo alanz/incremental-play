@@ -81,7 +81,7 @@ data Happy_IntList = HappyCons FAST_INT Happy_IntList
 #define MK_TOKEN(x)         (happyInTok (x))
 #elif defined(HAPPY_INCR)
 #define GET_ERROR_TOKEN(x)  (case x of { Node (Val{ here = HappyErrorToken IBOX(i)}) _ -> i} )
-#define MK_ERROR_TOKEN(i)   (mkNode (HappyErrorToken IBOX(i)) [] )
+#define MK_ERROR_TOKEN(i)   (mkNode (HappyErrorToken IBOX(i)) Nothing False [] )
 #define MK_TOKEN(x)         (mkNode (HappyTerminal (x)) [])
 #else
 #define GET_ERROR_TOKEN(x)  (case x of { HappyErrorToken IBOX(i) -> i })
@@ -793,8 +793,9 @@ happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts)
 happyFail explist i inp HAPPYSTATE(action) sts stk =
 --      trace "entering error recovery" $
    -- TODO:AZ: restore the error processing
-        -- DO_ACTION(NotVerifying,action,(TERMINAL(ERROR_TOK)),inp,sts, MK_ERROR_TOKEN(i) `HappyStk` stk)
-        happyError_ explist i inp
+        DO_ACTION(NotVerifying,action   ,(TERMINAL(ERROR_TOK)),inp,         sts, MK_ERROR_TOKEN(i) `HappyStk` stk)
+        -- DO_ACTION(verifying   ,new_state,i                    ,inp,CONS(st,sts), stk)
+        -- happyError_ explist i inp
 
 -- Internal happy errors:
 
