@@ -14,15 +14,29 @@ extra-source-files:  ChangeLog.md, README.md
 cabal-version:       >=2.0
 
 library
-  -- exposed-modules:     
+  exposed-modules:     Language.Incremental.LSP
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.13
-  ghc-options:            -Wall
+                     , haskell-lsp
+                     , hslogger
+                     , data-default
+                     , optparse-applicative
+                     , megaparsec
+                     , mtl
+                     , lens
+                     , stm
+                     , text
+                     , unix
+                     , protolude
+                     , ansi-wl-pprint
+
+  ghc-options:         -Wall -fwarn-tabs -fwarn-unused-imports -fwarn-missing-signatures -fwarn-name-shadowing -fwarn-incomplete-patterns
+
   hs-source-dirs:      src
   default-language:    Haskell2010
 
-executable main
+executable incremental-play
   main-is:                Main.hs
   -- Other-Modules:          Paths_HaRe
   ghc-options:            -Wall
@@ -31,6 +45,7 @@ executable main
   build-depends:          base >= 4.9  && < 4.13
                         , array
                         , containers
+                        , incremental-play
                         , lens
                         , prettyprinter
                         , prettyprinter-ansi-terminal

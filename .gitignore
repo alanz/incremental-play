@@ -23,3 +23,5 @@
 /Repetitive2.info
 /app/Repetitive2.hs
 /happy-templates/IncrementalTemplate-ghc-debug
+.stack-work
+/cabal.project.local
