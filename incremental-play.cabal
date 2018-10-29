@@ -11,13 +11,13 @@ maintainer:          alan.zimm@gmail.com
 category:            Development
 build-type:          Simple
 extra-source-files:  ChangeLog.md, README.md
-cabal-version:       >=1.10
+cabal-version:       >=2.0
 
 library
   -- exposed-modules:     
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.9 && <4.11
+  build-depends:       base >=4.9 && <4.13
   ghc-options:            -Wall
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -28,8 +28,16 @@ executable main
   ghc-options:            -Wall
   hs-source-dirs:
     ./app
-  build-depends:          base >= 4.9  && < 4.11
-                        , happy == 1.20.*
+  build-depends:          base >= 4.9  && < 4.13
+                        , array
+                        , containers
+                        , lens
+                        , prettyprinter
+                        , prettyprinter-ansi-terminal
+                        , zippers
+  --                      ,  happy == 1.20.*
+  -- build-tools:            happy == 1.20.*
+  default-language:    Haskell2010
 
 -- test-suite spec
 --   type:

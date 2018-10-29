@@ -1,0 +1,5 @@
+packages: .
+          ./submodules/happy
+
+package happy
+  flags: debug

@@ -13,6 +13,9 @@ This is also implemented in https://github.com/tree-sitter/tree-sitter
 Install the custom version of `happy` from https://github.com/alanz/happy, using
 the `incremental` branch.
 
+I rename the installed executable to `happy-az`, so that it does not
+interfere with the system version.
+
 In this directory
 
     make
