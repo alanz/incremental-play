@@ -4,26 +4,26 @@ all: repetitive2 repetitive precedence simple
 # HAPPY=./dist-newstyle/build/x86_64-linux/ghc-8.4.3/happy-1.20.0/build/happy/happy
 HAPPY=happy-az
 
-repetitive2 : app/Repetitive2.y templates
+repetitive2 : parsers/Repetitive2.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=Repetitive2.info \
     --lr0 --action --goto --lookaheads \
-    app/Repetitive2.y
+    parsers/Repetitive2.y
 
 
-repetitive : app/Repetitive.y templates
+repetitive : parsers/Repetitive.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=Repetitive.info \
     --lr0 --action --goto --lookaheads \
-    app/Repetitive.y
+    parsers/Repetitive.y
 
-precedence : app/ExprPrecedence.y templates
+precedence : parsers/ExprPrecedence.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=ExprPrecedence.info \
     --lr0 --action --goto --lookaheads \
-    app/ExprPrecedence.y
+    parsers/ExprPrecedence.y
 
-simple : app/ExprSimple.y templates
+simple : parsers/ExprSimple.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=ExprSimple.info \
     --lr0 --action --goto --lookaheads \
-    app/ExprSimple.y
+    parsers/ExprSimple.y
 
 .PHONY : templates
 templates : happy-templates/IncrementalTemplate-ghc-debug
@@ -35,5 +35,5 @@ happy-templates/IncrementalTemplate-ghc-debug: happy-templates/GenericTemplate.h
 
   # ("HappyTemplate-arrays-ghc-debug"     , ["-DHAPPY_ARRAY","-DHAPPY_GHC","-DHAPPY_DEBUG"]),
 
-orig : app/ExprSimpleOrig.y
-	$(HAPPY) --ghc --array --debug  --info=ExprSimpleOrig.info app/ExprSimpleOrig.y
+orig : parsers/ExprSimpleOrig.y
+	$(HAPPY) --ghc --array --debug  --info=ExprSimpleOrig.info parsers/ExprSimpleOrig.y

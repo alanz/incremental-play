@@ -14,9 +14,9 @@ extra-source-files:  ChangeLog.md, README.md
 cabal-version:       >=2.0
 
 library
+  hs-source-dirs:      src parsers
   exposed-modules:     Language.Incremental.LSP
-  -- other-modules:       
-  -- other-extensions:    
+  other-modules:       Repetitive2
   build-depends:       base >=4.9 && <4.13
                      , haskell-lsp
                      , hslogger
@@ -32,8 +32,6 @@ library
                      , ansi-wl-pprint
 
   ghc-options:         -Wall -fwarn-tabs -fwarn-unused-imports -fwarn-missing-signatures -fwarn-name-shadowing -fwarn-incomplete-patterns
-
-  hs-source-dirs:      src
   default-language:    Haskell2010
 
 executable incremental-play
