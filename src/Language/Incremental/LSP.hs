@@ -6,40 +6,37 @@ module Language.Incremental.LSP
  ( main
  ) where
 
-
-import Repetitive2
-
-import Control.Concurrent
-import Control.Concurrent.STM.TChan
-import qualified Control.Exception as Exception
-import Control.Monad
-import Control.Lens
-import Control.Monad.IO.Class
-import Control.Monad.Reader
-import Control.Monad.STM
-import System.Posix.Process
-import System.Posix.Types
 -- import Data.Maybe
-import Data.Default
 -- import Data.Semigroup
--- import qualified Data.List.NonEmpty as NonEmpty
--- import qualified Data.Text as T
-import qualified Language.Haskell.LSP.Control as LSP.Control
-import qualified Language.Haskell.LSP.Core    as LSP.Core
 -- import Language.Haskell.LSP.Diagnostics
-import Language.Haskell.LSP.Messages
-import qualified Language.Haskell.LSP.Types as LSP
-import qualified Language.Haskell.LSP.Types.Lens as LSP
-import qualified Language.Haskell.LSP.Utility as LSP
-import           Language.Haskell.LSP.Types.Capabilities as C
-
+-- import Protolude hiding (sourceLine, sourceColumn)
 -- import Text.Megaparsec (errorPos, parse, SourcePos(..), unPos, parseErrorTextPretty)
 -- import Text.PrettyPrint.ANSI.Leijen (renderPretty, displayS)
-import System.Exit
+-- import qualified Data.List.NonEmpty as NonEmpty
+-- import qualified Data.Text as T
+import           Control.Concurrent
+import           Control.Concurrent.STM.TChan
+import qualified Control.Exception as Exception
+import           Control.Lens
+import           Control.Monad
+import           Control.Monad.IO.Class
+import           Control.Monad.Reader
+import           Control.Monad.STM
+import           Data.Default
+import qualified Language.Haskell.LSP.Control as LSP.Control
+import qualified Language.Haskell.LSP.Core as LSP.Core
+import           Language.Haskell.LSP.Messages
+import qualified Language.Haskell.LSP.Types as LSP
+import           Language.Haskell.LSP.Types.Capabilities as C
+import qualified Language.Haskell.LSP.Types.Lens as LSP
+import qualified Language.Haskell.LSP.Utility as LSP
+import           Language.Incremental.Visualise
+import           Options.Applicative
+import           Repetitive2
+import           System.Exit
 import qualified System.Log.Logger as L
-import Options.Applicative
--- import Protolude hiding (sourceLine, sourceColumn)
-
+import           System.Posix.Process
+import           System.Posix.Types
 
 data CommandLineOptions
    = CommandLineOptions
@@ -141,7 +138,8 @@ reactor lf inp =
              liftIO $ LSP.logs $ "reactor:got Document symbol request:" ++ show req
              -- C.ClientCapabilities _ tdc _ <- asksLspFuncs LSP.Core.clientCapabilities
              let
-               syms = [ds]
+               syms = asHierarchy
+               -- syms = [ds]
                ds =
                  LSP.DocumentSymbol
                     "sym"

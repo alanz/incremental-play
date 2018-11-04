@@ -24,6 +24,10 @@ main = do
   let p' = calc [newTree]
   -- let p' = calc [ptree]
   putStr $ drawTree $ fmap show p'
+  putStrLn "--------------------------------"
+  -- putStr $ drawTree $ fmap show $ posify $ fmap toBar ptree
+  putStr $ drawTree $ fmap show $ pp $ fmap toBar ptree
+  putStrLn "--------------------------------"
   return ()
 
 -- ptree :: HappyInput
@@ -113,3 +117,49 @@ showTree tree = putStrLn $ drawTree $ fmap show tree
 
 bar :: IO String
 bar = fmap rezip $ zipper "stale" & within traverse <&> tugs rightward 2 <&> focus .~ 'y'
+
+-- ---------------------------------------------------------------------
+
+toBar :: (Show a) => Val a t -> (String, [t])
+toBar v = (show (here v), terminals v)
+
+-- ---------------------------------------------------------------------
+
+data Bar = Bar { bLabel :: String
+               , bToks :: [Tok]
+               , bLength :: Int
+               , bSpan :: Span
+               } deriving Show
+
+data Span = Span Int Int
+            deriving Show
+
+-- ---------------------------------------------------------------------
+
+pp :: Tree (String,[Tok]) -> Tree Bar
+pp t = head $ go (Span 0 0) [t]
+  where
+    go :: Span -> [Tree (String,[Tok])] -> [Tree Bar]
+    go _ [] = []
+    go sp@(Span s e) (Node i []:tts) = Node b []:go sp' tts
+      where
+        b = (ff sp i) { bSpan = sp' }
+        sp' = Span e (e + bLength b)
+    go sp (Node i ts:tts) = r:go sp' tts
+      where
+        b = (ff sp i) { bSpan = sp' }
+        ts' = go sp ts
+        r = Node b ts'
+        Node bs _ = head ts'
+        Node be _ = last ts'
+        Span s _ = bSpan bs
+        Span _ e = bSpan be
+        sp' = Span s e
+
+    ff (Span start end) (s,ts) = Bar s ts len sp
+      where
+        len = length ts
+        sp = Span end (end + len)
+
+
+-- ---------------------------------------------------------------------

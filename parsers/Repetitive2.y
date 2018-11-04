@@ -11,6 +11,7 @@ import Data.Tree
 import qualified Data.Bits as Bits
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal
+
 }
 
 %name calc

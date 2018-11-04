@@ -7,22 +7,26 @@ HAPPY=happy-az
 repetitive2 : parsers/Repetitive2.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=Repetitive2.info \
     --lr0 --action --goto --lookaheads \
+    -o generated-parsers/Repetitive2.hs \
     parsers/Repetitive2.y
 
 
 repetitive : parsers/Repetitive.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=Repetitive.info \
     --lr0 --action --goto --lookaheads \
+    -o generated-parsers/Repetitive.hs \
     parsers/Repetitive.y
 
 precedence : parsers/ExprPrecedence.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=ExprPrecedence.info \
     --lr0 --action --goto --lookaheads \
+    -o generated-parsers/ExprPrecedence.hs \
     parsers/ExprPrecedence.y
 
 simple : parsers/ExprSimple.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=ExprSimple.info \
     --lr0 --action --goto --lookaheads \
+    -o generated-parsers/ExprSimple.hs \
     parsers/ExprSimple.y
 
 .PHONY : templates
