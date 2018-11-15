@@ -39,15 +39,21 @@ toHierarchy (Node b ts) = [mkDs (bLabel b) (bSpan b) (Just children)]
   where
     children = LSP.List $ concatMap toHierarchy ts
 
-mkDs label span children =
+mkDs :: String
+          -> Span
+          -> Maybe (LSP.List LSP.DocumentSymbol)
+          -> LSP.DocumentSymbol
+mkDs label (Span s e) children =
                  LSP.DocumentSymbol
                     (T.pack label)
                     Nothing
                     LSP.SkVariable
                     Nothing
-                    (LSP.Range (LSP.Position 0 0) (LSP.Position 0 3))
-                    (LSP.Range (LSP.Position 0 0) (LSP.Position 0 3))
+                    sp
+                    sp
                     children
+  where
+    sp = LSP.Range (LSP.Position 0 s) (LSP.Position 0 e)
 
 -- ---------------------------------------------------------------------
 
@@ -60,12 +66,22 @@ ptree = (calc . lexer) "a BbDd c"
 -- ---------------------------------------------------------------------
 
 convert :: Show a => Tree (Val a Tok) -> Tree Bar
-convert ptree = pp $ fmap toBar ptree
+convert tree = pp $ fmap toBar tree
 
 -- ---------------------------------------------------------------------
 
 toBar :: (Show a) => Val a t -> (String, [t])
-toBar v = (show (here v), terminals v)
+toBar v = (showConstr (here v), terminals v)
+
+
+-- The Happy AST has each element we care about wrapped in a
+-- constructor, we discard that first, together with the opening paren
+showConstr :: (Show a) => a -> String
+showConstr = fixup . head . tail . words . show
+  where
+    fixup "()" = "()"
+    fixup ('(':r) = r
+    fixup r = r
 
 -- ---------------------------------------------------------------------
 
