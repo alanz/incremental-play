@@ -171,10 +171,11 @@ data Token
     { tokType :: TokenType
     , tokLexeme :: String
     , tokState :: Int
+    , tokLookAhead :: Int
     -- state, lookahead and lookback are maintained implicitly
     }
 instance Show Token where
-  show (Tok t s st) = intercalate " " ["Tok",show t,show s,show st]
+  show (Tok t s st la) = intercalate " " ["Tok",show t,show s,show st,show la]
 
 data TokenType
   = CMNT
@@ -191,10 +192,10 @@ data TokenType
   deriving Show
 
 -- alexEOF = return [EOF]
-alexEOF = return (Tok EOF "" 0)
+alexEOF = return (Tok EOF "" 0 0)
 
 mkToken :: TokenType -> AlexInput -> Int -> Alex Token
-mkToken t = \(_,_,_,s) n -> return (Tok t (take n s) (-1))
+mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)
 
 lexShow :: String -> String
 lexShow s = case lexTokenStream s of
@@ -209,6 +210,7 @@ lexTokenStream buf
   where
     initState :: AlexState
     initState = (AlexState {alex_pos = alexStartPos,
+                        alex_la  = 0,
                         alex_inp = buf,
                         alex_chr = '\n',
                         alex_bytes = [],
@@ -217,9 +219,11 @@ lexTokenStream buf
     go = do
       ltok <- alexMonadScan
       sc <- alexGetStartCode
+      la <- alexGetLookAhead
+      alexSetLookAhead 0
       case ltok of
-        (Tok EOF _ _) -> return []
-        _ -> liftM (ltok { tokState = sc } :) go
+        (Tok EOF _ _ _) -> return []
+        _ -> liftM (ltok { tokState = sc, tokLookAhead = la } :) go
 
 main = do
   print . runAlex "/* baz */" $ alexMonadScan
@@ -273,22 +277,25 @@ type Byte = Word8
 
 
 type AlexInput = (AlexPosn,     -- current position,
+                  Int,          -- number of times alexGetByte has
+                                -- been called. Used for lookahead
+                                -- tracking.
                   Char,         -- previous char
                   [Byte],       -- pending bytes on current char
                   String)       -- current input string
 
 ignorePendingBytes :: AlexInput -> AlexInput
-ignorePendingBytes (p,c,_ps,s) = (p,c,[],s)
+ignorePendingBytes (p,la,c,_ps,s) = (p,la,c,[],s)
 
 alexInputPrevChar :: AlexInput -> Char
-alexInputPrevChar (_p,c,_bs,_s) = c
+alexInputPrevChar (_p,_la,c,_bs,_s) = c
 
 alexGetByte :: AlexInput -> Maybe (Byte,AlexInput)
-alexGetByte (p,c,(b:bs),s) = trace ("alexGetByte1:b=" ++ show b) $ Just (b,(p,c,bs,s))
-alexGetByte (_,_,[],[]) = Nothing
-alexGetByte (p,_,[],(c:s))  = let p' = alexMove p c
-                                  (b:bs) = utf8Encode c
-                              in( trace ("alexGetByte2:b=" ++ show b) p') `seq`  Just (b, (p', c, bs, s))
+alexGetByte (p,la,c,(b:bs),s) = trace ("alexGetByte1:b=" ++ show b) $ Just (b,(p,la+1,c,bs,s))
+alexGetByte (_,_,_,[],[]) = Nothing
+alexGetByte (p,la,_,[],(c:s))  = let p' = alexMove p c
+                                     (b:bs) = utf8Encode c
+                                 in( trace ("alexGetByte2:b=" ++ show b) p') `seq`  Just (b, (p', la+1, c, bs, s))
 
 -- -----------------------------------------------------------------------------
 -- Token positions
@@ -319,6 +326,8 @@ alexMove (AlexPn a l c) _    = AlexPn (a+1)  l     (c+1)
 
 data AlexState = AlexState {
         alex_pos :: !AlexPosn,  -- position at current input location
+        alex_la  :: !Int,       -- Tracking how much lookahead is used
+                                -- for lexing the current token.
         alex_inp :: String,     -- the current input
         alex_chr :: !Char,      -- the character before the input
         alex_bytes :: [Byte],
@@ -330,6 +339,7 @@ data AlexState = AlexState {
 runAlex :: String -> Alex a -> Either String a
 runAlex input__ (Alex f)
    = case f (AlexState {alex_pos = alexStartPos,
+                        alex_la  = 0,
                         alex_inp = input__,
                         alex_chr = '\n',
                         alex_bytes = [],
@@ -362,12 +372,12 @@ instance Monad Alex where
 
 alexGetInput :: Alex AlexInput
 alexGetInput
- = Alex $ \s@AlexState{alex_pos=pos,alex_chr=c,alex_bytes=bs,alex_inp=inp__} ->
-        Right (s, (pos,c,bs,inp__))
+ = Alex $ \s@AlexState{alex_pos=pos,alex_la=la,alex_chr=c,alex_bytes=bs,alex_inp=inp__} ->
+        Right (s, (pos,la,c,bs,inp__))
 
 alexSetInput :: AlexInput -> Alex ()
-alexSetInput (pos,c,bs,inp__)
- = Alex $ \s -> case s{alex_pos=pos,alex_chr=c,alex_bytes=bs,alex_inp=inp__} of
+alexSetInput (pos,la,c,bs,inp__)
+ = Alex $ \s -> case s{alex_pos=pos,alex_la=la,alex_chr=c,alex_bytes=bs,alex_inp=inp__} of
                   state__@(AlexState{}) -> Right (state__, ())
 
 alexError :: String -> Alex a
@@ -379,13 +389,18 @@ alexGetStartCode = Alex $ \s@AlexState{alex_scd=sc} -> Right (s, sc)
 alexSetStartCode :: Int -> Alex ()
 alexSetStartCode sc = Alex $ \s -> Right (s{alex_scd=sc}, ())
 
+alexGetLookAhead :: Alex Int
+alexGetLookAhead = Alex $ \s@AlexState{alex_la=la} -> Right (s, la)
+
+alexSetLookAhead :: Int -> Alex ()
+alexSetLookAhead la = Alex $ \s -> Right (s{alex_la=la}, ())
 
 alexMonadScan = do
   inp__ <- alexGetInput
   sc <- alexGetStartCode
   case alexScan inp__ sc of
     AlexEOF -> alexEOF
-    AlexError ((AlexPn _ line column),_,_,_) -> alexError $ "lexical error at line " ++ (show line) ++ ", column " ++ (show column)
+    AlexError ((AlexPn _ line column),_,_,_,_) -> alexError $ "lexical error at line " ++ (show line) ++ ", column " ++ (show column)
     AlexSkip  inp__' _len -> do
         alexSetInput inp__'
         alexMonadScan
