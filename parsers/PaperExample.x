@@ -34,30 +34,27 @@ $notnl          = . # \n
 
 Example :-
 
--- @comment            { mkToken CMNT }
--- @whitespace         { mkToken WS }
-<0,pp_directive,bol>\n { begin bol }
-<bol>
-  {
-  "#" { begin pp_directive }
-  @comment            { mkToken CMNT }
-  @whitespace         { mkToken WS }
-  ()  { begin 0 }
-  }
+-- match in all contexts
+@comment            { mkToken CMNT }
+@whitespace         { mkToken WS }
+\n                  { mkToken WS `andBegin` pp_directive }
+<pp_directive> {
+ () /(@whitespace|@comment)*"#" { begin pp_directive }
+ "#"                            { mkToken PND }
+ ()                             { begin 0 } -- reset pp_directive
+}
 <pp_directive> "if" { mkToken PP_IF }
-<0>
-  {
+-- <pp_directive> "#if" { mkToken PP_IF }
+<0> {
   "#"                 { mkToken PND }
   "("                 { mkToken LP }
   @ident              { mkToken IDENT }
   "=="                { mkToken EQEQ }
   @intconst           { mkToken INTCONST }
   ")"                 { mkToken RP }
-  @comment            { mkToken CMNT }
-  @whitespace         { mkToken WS }
   }
--- -- -- Collect contiguous, otherwise-unmatched text into an error token.
-<0,pp_directive> .                   { mkToken ERROR_TOKEN }
+-- Collect contiguous, otherwise-unmatched text into an error token.
+<0> .                   { mkToken ERROR_TOKEN }
 
 
 -- -----------------------------------------------------------------------------
@@ -97,6 +94,11 @@ alexEOF = return (Tok EOF "")
 mkToken :: TokenType -> AlexInput -> Int -> Alex Token
 mkToken t = \(_,_,_,s) n -> return (Tok t (take n s))
 
+lexShow :: String -> String
+lexShow s = case lexTokenStream s of
+  Left err -> err
+  Right toks -> unlines $ map show toks
+
 lexTokenStream :: String -> Either String [Token]
 lexTokenStream buf
   = case unAlex go initState of
@@ -108,7 +110,7 @@ lexTokenStream buf
                         alex_inp = buf,
                         alex_chr = '\n',
                         alex_bytes = [],
-                        alex_scd = bol})
+                        alex_scd = pp_directive})
     go :: Alex [Token]
     go = do
       ltok <- alexMonadScan
