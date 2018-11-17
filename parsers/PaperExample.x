@@ -6,6 +6,7 @@
 module PaperExample where
 
 import Control.Monad
+import Data.List
 }
 
 %wrapper "monad"
@@ -16,7 +17,8 @@ import Control.Monad
 -- Attach symbolic names to regular expressions.
 $whitespace     = [\ \t]
 -- $notstar        = [^*]
-
+-- $notnl          = [^\n] -- (. # \n)
+$notnl          = . # \n
 @whitespace     = $whitespace+
 @ident          = [_a-zA-Z][_a-zA-Z0-9]*
 @intconst       = [1-9][0-9]*
@@ -32,25 +34,30 @@ $whitespace     = [\ \t]
 
 Example :-
 
-@comment            { mkToken CMNT }
-@whitespace         { mkToken WS }
+-- @comment            { mkToken CMNT }
+-- @whitespace         { mkToken WS }
 <0,pp_directive,bol>\n { begin bol }
-<bol> {
- () / "#" { begin pp_directive }
- () / (@whitespace|@comment)* "#" { begin pp_directive }
- () "#" { begin pp_directive }
- () { begin 0 }
+<bol>
+  {
+  "#" { begin pp_directive }
+  @comment            { mkToken CMNT }
+  @whitespace         { mkToken WS }
+  ()  { begin 0 }
   }
-<pp_directive> "#if" { mkToken PP_IF }
 <pp_directive> "if" { mkToken PP_IF }
-"#"                 { mkToken PND }
-"("                 { mkToken LP }
-@ident              { mkToken IDENT }
-"=="                { mkToken EQEQ }
-@intconst           { mkToken INTCONST }
-")"                 { mkToken RP }
+<0>
+  {
+  "#"                 { mkToken PND }
+  "("                 { mkToken LP }
+  @ident              { mkToken IDENT }
+  "=="                { mkToken EQEQ }
+  @intconst           { mkToken INTCONST }
+  ")"                 { mkToken RP }
+  @comment            { mkToken CMNT }
+  @whitespace         { mkToken WS }
+  }
 -- -- -- Collect contiguous, otherwise-unmatched text into an error token.
-.                   { mkToken ERROR_TOKEN }
+<0,pp_directive> .                   { mkToken ERROR_TOKEN }
 
 
 -- -----------------------------------------------------------------------------
@@ -58,35 +65,19 @@ Example :-
 
 {
 
-{- original example
-%start pp_directive
-%%
--- Patterns:                     Rules:
-{comment}                     return CMNT();
-{whitespace}                  return WS();
-\n                            BEGIN(INITIAL); return WS();
-ˆ/({whitespace}|{comment})*#  BEGIN(pp_directive);
-<pp_directive>if              return PP_IF();
-"#"                           return PND();
-"("                           return LP();
-{ident}                       return IDENT();
-"=="                          return EQEQ();
-{intconst}                    return INTCONST();
-")"                           return RP();
-Collect contiguous, otherwise-unmatched text into an error token.
-.                             error();
-%%
--}
 -- -----------------------------------------------------------------------------
 
--- push :: Token -> AlexAction [Token]
--- push x = \_ _ -> do
---   xs <- alexMonadScan
---   pure (x:xs)
-
 -- The token type
-
 data Token
+  = Tok
+    { tokType :: TokenType
+    , tokLexeme :: String
+    -- state, lookahead and lookback are maintained implicitly
+    }
+instance Show Token where
+  show (Tok t s) = intercalate " " ["Tok",show t,show s]
+
+data TokenType
   = CMNT
   | WS
   | PP_IF
@@ -101,10 +92,10 @@ data Token
   deriving Show
 
 -- alexEOF = return [EOF]
-alexEOF = return EOF
+alexEOF = return (Tok EOF "")
 
-mkToken :: Token -> AlexInput -> Int -> Alex Token
-mkToken t = \_ _ -> return t
+mkToken :: TokenType -> AlexInput -> Int -> Alex Token
+mkToken t = \(_,_,_,s) n -> return (Tok t (take n s))
 
 lexTokenStream :: String -> Either String [Token]
 lexTokenStream buf
@@ -122,7 +113,7 @@ lexTokenStream buf
     go = do
       ltok <- alexMonadScan
       case ltok of
-        EOF -> return []
+        (Tok EOF _) -> return []
         _ -> liftM (ltok:) go
 
 main = do
