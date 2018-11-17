@@ -69,10 +69,11 @@ data Token
   = Tok
     { tokType :: TokenType
     , tokLexeme :: String
+    , tokState :: Int
     -- state, lookahead and lookback are maintained implicitly
     }
 instance Show Token where
-  show (Tok t s) = intercalate " " ["Tok",show t,show s]
+  show (Tok t s st) = intercalate " " ["Tok",show t,show s,show st]
 
 data TokenType
   = CMNT
@@ -89,10 +90,10 @@ data TokenType
   deriving Show
 
 -- alexEOF = return [EOF]
-alexEOF = return (Tok EOF "")
+alexEOF = return (Tok EOF "" 0)
 
 mkToken :: TokenType -> AlexInput -> Int -> Alex Token
-mkToken t = \(_,_,_,s) n -> return (Tok t (take n s))
+mkToken t = \(_,_,_,s) n -> return (Tok t (take n s) (-1))
 
 lexShow :: String -> String
 lexShow s = case lexTokenStream s of
@@ -114,9 +115,10 @@ lexTokenStream buf
     go :: Alex [Token]
     go = do
       ltok <- alexMonadScan
+      sc <- alexGetStartCode
       case ltok of
-        (Tok EOF _) -> return []
-        _ -> liftM (ltok:) go
+        (Tok EOF _ _) -> return []
+        _ -> liftM (ltok { tokState = sc } :) go
 
 main = do
   print . runAlex "/* baz */" $ alexMonadScan
