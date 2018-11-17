@@ -5,6 +5,7 @@
 -- Top level Haskell stuff copied to output file
 module PaperExample where
 
+import Control.Monad
 }
 
 %wrapper "monad"
@@ -13,10 +14,10 @@ module PaperExample where
 -- Alex "Character set macros"
 
 -- Attach symbolic names to regular expressions.
-$whitespace     = [ \t]
+$whitespace     = [\ \t]
 -- $notstar        = [^*]
 
-@whitespace     = $whitespace*
+@whitespace     = $whitespace+
 @ident          = [_a-zA-Z][_a-zA-Z0-9]*
 @intconst       = [1-9][0-9]*
 -- @comment        = "/*"([^*]|\*[^/])*"*/"
@@ -31,10 +32,13 @@ $whitespace     = [ \t]
 
 Example :-
 
-@comment    { mkToken CMNT }
-@whitespace { mkToken WS }
-\n { begin 0 }
-^(@whitespace|@comment)*\# { begin pp_directive }
+@comment            { mkToken CMNT }
+@whitespace         { mkToken WS }
+\n                  { begin 0 }
+-- ^ (@whitespace|@comment)* "#" { begin pp_directive }
+^ () / "#" { begin pp_directive }
+^ () / (@whitespace|@comment)* "#" { begin pp_directive }
+<pp_directive> "#if" { mkToken PP_IF }
 <pp_directive> "if" { mkToken PP_IF }
 "#"                 { mkToken PND }
 "("                 { mkToken LP }
@@ -42,7 +46,7 @@ Example :-
 "=="                { mkToken EQEQ }
 @intconst           { mkToken INTCONST }
 ")"                 { mkToken RP }
--- -- Collect contiguous, otherwise-unmatched text into an error token.
+-- -- -- Collect contiguous, otherwise-unmatched text into an error token.
 .                   { mkToken ERROR_TOKEN }
 
 
@@ -96,12 +100,39 @@ data Token
 -- alexEOF = return [EOF]
 alexEOF = return EOF
 
+mkToken :: Token -> AlexInput -> Int -> Alex Token
 mkToken t = \_ _ -> return t
 
 main = do
-  print . runAlex "foo bar" $ alexMonadScan
+  print . runAlex "/* baz */" $ alexMonadScan
+  print . runAlex "\t" $ alexMonadScan
+  print . runAlex " " $ alexMonadScan
+  print . runAlex "#if" $ alexMonadScan
+  print . runAlex "/* comment */#if" $ alexMonadScan
+  print . runAlex " /* comment */#if" $ alexMonadScan
+  print . runAlex "#" $ alexMonadScan
+  print . runAlex "(" $ alexMonadScan
+  print . runAlex "foo" $ alexMonadScan
+  print . runAlex "==" $ alexMonadScan
+  print . runAlex "123" $ alexMonadScan
+  print . runAlex ")" $ alexMonadScan
 
--- TODO: look at push function in
--- https://github.com/aiya000/learning-Haskell/blob/3c9307776d0421a1aa3f1bea59adfd2593f519bc/Room/Alex/monad_wrapper.x
+lexTokenStream buf
+  = case unAlex go initState of
+      Left str -> Left str
+      Right (_,toks) -> Right toks
+  where
+    initState :: AlexState
+    initState = (AlexState {alex_pos = alexStartPos,
+                        alex_inp = buf,
+                        alex_chr = '\n',
+                        alex_bytes = [],
+                        alex_scd = 0})
+    go :: Alex [Token]
+    go = do
+      ltok <- alexMonadScan
+      case ltok of
+        EOF -> return []
+        _ -> liftM (ltok:) go
 
 }
