@@ -34,10 +34,13 @@ Example :-
 
 @comment            { mkToken CMNT }
 @whitespace         { mkToken WS }
-\n                  { begin 0 }
--- ^ (@whitespace|@comment)* "#" { begin pp_directive }
-^ () / "#" { begin pp_directive }
-^ () / (@whitespace|@comment)* "#" { begin pp_directive }
+<0,pp_directive,bol>\n { begin bol }
+<bol> {
+ () / "#" { begin pp_directive }
+ () / (@whitespace|@comment)* "#" { begin pp_directive }
+ () "#" { begin pp_directive }
+ () { begin 0 }
+  }
 <pp_directive> "#if" { mkToken PP_IF }
 <pp_directive> "if" { mkToken PP_IF }
 "#"                 { mkToken PND }
@@ -103,6 +106,25 @@ alexEOF = return EOF
 mkToken :: Token -> AlexInput -> Int -> Alex Token
 mkToken t = \_ _ -> return t
 
+lexTokenStream :: String -> Either String [Token]
+lexTokenStream buf
+  = case unAlex go initState of
+      Left str -> Left str
+      Right (_,toks) -> Right toks
+  where
+    initState :: AlexState
+    initState = (AlexState {alex_pos = alexStartPos,
+                        alex_inp = buf,
+                        alex_chr = '\n',
+                        alex_bytes = [],
+                        alex_scd = bol})
+    go :: Alex [Token]
+    go = do
+      ltok <- alexMonadScan
+      case ltok of
+        EOF -> return []
+        _ -> liftM (ltok:) go
+
 main = do
   print . runAlex "/* baz */" $ alexMonadScan
   print . runAlex "\t" $ alexMonadScan
@@ -116,23 +138,5 @@ main = do
   print . runAlex "==" $ alexMonadScan
   print . runAlex "123" $ alexMonadScan
   print . runAlex ")" $ alexMonadScan
-
-lexTokenStream buf
-  = case unAlex go initState of
-      Left str -> Left str
-      Right (_,toks) -> Right toks
-  where
-    initState :: AlexState
-    initState = (AlexState {alex_pos = alexStartPos,
-                        alex_inp = buf,
-                        alex_chr = '\n',
-                        alex_bytes = [],
-                        alex_scd = 0})
-    go :: Alex [Token]
-    go = do
-      ltok <- alexMonadScan
-      case ltok of
-        EOF -> return []
-        _ -> liftM (ltok:) go
 
 }
