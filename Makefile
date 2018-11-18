@@ -5,10 +5,16 @@ all: repetitive2 repetitive precedence simple lexer
 HAPPY=happy-az
 ALEX=alex
 
-lexer : parsers/PaperExample.x
+#-- ------------------------------------------
+
+lexer : parsers/PaperExample.x templates
 	$(ALEX) --ghc --debug \
+    --template=./alex-templates \
+    --info \
     -o generated-parsers/PaperExample.hs \
     parsers/PaperExample.x
+
+#-- ------------------------------------------
 
 repetitive2 : parsers/Repetitive2.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=Repetitive2.info \
@@ -35,8 +41,11 @@ simple : parsers/ExprSimple.y templates
     -o generated-parsers/ExprSimple.hs \
     parsers/ExprSimple.y
 
+#-- ------------------------------------------
+#-- ------------------------------------------
 .PHONY : templates
-templates : happy-templates/IncrementalTemplate-ghc-debug
+templates : happy-templates/IncrementalTemplate-ghc-debug \
+            alex-templates/AlexTemplate-ghc-debug
 
 # happy-templates/HappyTemplate-incremental-ghc-debug: happy-templates/GenericTemplate.hs
 happy-templates/IncrementalTemplate-ghc-debug: happy-templates/GenericTemplate.hs
@@ -45,5 +54,13 @@ happy-templates/IncrementalTemplate-ghc-debug: happy-templates/GenericTemplate.h
 
   # ("HappyTemplate-arrays-ghc-debug"     , ["-DHAPPY_ARRAY","-DHAPPY_GHC","-DHAPPY_DEBUG"]),
 
+#-- ------------------------------------------
+
+alex-templates/AlexTemplate-ghc-debug: alex-templates/GenericTemplate.hs
+	ghc -cpp -E -DALEX_ARRAY -DALEX_GHC -DALEX_DEBUG -DALEX_INCR  alex-templates/GenericTemplate.hs -o $@
+	sed -i -E "s/^# ([0-9]+ \".*\").*/{-# LINE \1 #-}/" $@
+
+
+#-- ------------------------------------------
 orig : parsers/ExprSimpleOrig.y
 	$(HAPPY) --ghc --array --debug  --info=ExprSimpleOrig.info parsers/ExprSimpleOrig.y

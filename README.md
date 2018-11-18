@@ -10,11 +10,23 @@ This is also implemented in https://github.com/tree-sitter/tree-sitter
 
 ## To experiment
 
+### happy
+
 Install the custom version of `happy` from https://github.com/alanz/happy, using
 the `incremental` branch.
 
 I rename the installed executable to `happy-az`, so that it does not
 interfere with the system version.
+
+### alex
+
+Install the custom version of `alex` from https://github.com/alanz/alex, using
+the `incremental` branch.
+
+I rename the installed executable to `alex-az`, so that it does not
+interfere with the system version.
+
+### building
 
 In this directory
 

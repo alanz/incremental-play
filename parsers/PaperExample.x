@@ -71,14 +71,19 @@ Example :-
 -- match in all contexts
 @comment            { mkToken CMNT }
 @whitespace         { mkToken WS }
-\n                  { mkToken WS `andBegin` pp_directive }
-<pp_directive> {
- () /(@whitespace|@comment)*"#" { begin pp_directive }
- "#"                            { mkToken PND }
+\n                  { mkToken WS `andBegin` bol }
+<bol> {
+ -- () /(@whitespace|@comment)*"#" { begin pp_directive }
+ () /(@whitespace|"$"|@comment)*"#" { begin pp_directive }
+ -- () /\$+"#" { begin pp_directive }
  ()                             { begin 0 } -- reset pp_directive
 }
-<pp_directive> "if" { mkToken PP_IF }
--- <pp_directive> "#if" { mkToken PP_IF }
+<pp_directive> {
+ "$"                            { mkToken ERROR_TOKEN }
+ "#"                            { mkToken PND }
+ "if"                           { mkToken PP_IF }
+ ()                             { begin 0 } -- reset pp_directive
+}
 <0> {
   "#"                 { mkToken PND }
   "("                 { mkToken LP }
@@ -157,6 +162,8 @@ lexTokenStream buf
       case ltok of
         (Tok EOF _ _ _) -> return []
         _ -> liftM (ltok { tokState = sc, tokLookAhead = la } :) go
+
+eg = putStr $ lexShow "\n /* check for debugging */ # if(DEBUG==1)"
 
 main = do
   print . runAlex "/* baz */" $ alexMonadScan

@@ -27,3 +27,4 @@
 /happy-templates/HappyTemplate-incremental-ghc-debug
 /happy-templates/IncrementalTemplate-ghc-debug
 dist-newstyle
+/parsers/PaperExample.info
