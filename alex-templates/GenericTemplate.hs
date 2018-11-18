@@ -198,14 +198,14 @@ alex_scan_tkn user__ orig_input len input__ s last_acc =
 #endif
                              (predx user__ orig_input IBOX(len) input__)
             in if p
-                then (i',AlexLastAcc a (push_la i input__)
+                then (i',AlexLastAcc a (push_la i' input__)
                                                       IBOX(len) )
                 else check_accs i' rest
         check_accs i (AlexAccSkipPred predx rest)
            = let (i',p) = predx user__ orig_input
                                                       IBOX(len) input__
              in if p
-               then (i',AlexLastSkip (push_la i input__)
+               then (i',AlexLastSkip (push_la i' input__)
                                                       IBOX(len) )
                else check_accs i' rest
 #endif

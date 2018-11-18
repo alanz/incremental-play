@@ -198,8 +198,13 @@ data TokenType
 -- alexEOF = return [EOF]
 alexEOF = return (Tok EOF "" 0 0)
 
+-- mkToken :: TokenType -> AlexInput -> Int -> Alex Token
+-- mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)
+
 mkToken :: TokenType -> AlexInput -> Int -> Alex Token
-mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)
+mkToken t = \(_,la,_,_,s) n -> do
+  let tok = (Tok t (take n s) (-1) la)
+  return $ trace ("mkToken:tok=" ++ show tok) tok
 
 lexShow :: String -> String
 lexShow s = case lexTokenStream s of
@@ -532,7 +537,7 @@ alex_action_15 =  mkToken ERROR_TOKEN
 
 
 {-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/tmp/ghc13521_0/ghc_2.h" #-}
+{-# LINE 1 "/tmp/ghc15490_0/ghc_2.h" #-}
 
 
 
@@ -889,14 +894,14 @@ alex_scan_tkn user__ orig_input len input__ s last_acc =
 
                              (predx user__ orig_input (I# (len)) input__)
             in if p
-                then (i',AlexLastAcc a (push_la i input__)
+                then (i',AlexLastAcc a (push_la i' input__)
                                                       (I# (len)) )
                 else check_accs i' rest
         check_accs i (AlexAccSkipPred predx rest)
            = let (i',p) = predx user__ orig_input
                                                       (I# (len)) input__
              in if p
-               then (i',AlexLastSkip (push_la i input__)
+               then (i',AlexLastSkip (push_la i' input__)
                                                       (I# (len)) )
                else check_accs i' rest
 

@@ -132,8 +132,13 @@ data TokenType
 -- alexEOF = return [EOF]
 alexEOF = return (Tok EOF "" 0 0)
 
+-- mkToken :: TokenType -> AlexInput -> Int -> Alex Token
+-- mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)
+
 mkToken :: TokenType -> AlexInput -> Int -> Alex Token
-mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)
+mkToken t = \(_,la,_,_,s) n -> do
+  let tok = (Tok t (take n s) (-1) la)
+  return $ trace ("mkToken:tok=" ++ show tok) tok
 
 lexShow :: String -> String
 lexShow s = case lexTokenStream s of
