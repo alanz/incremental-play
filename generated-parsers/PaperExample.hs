@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP,MagicHash #-}
-
+{-# LINE 4 "parsers/PaperExample.x" #-}
 
 -- Top level Haskell stuff copied to output file
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
@@ -164,7 +164,7 @@ alex_actions = array (0 :: Int, 18)
   , (0,alex_action_15)
   ]
 
-
+{-# LINE 102 "parsers/PaperExample.x" #-}
 
 
 -- -----------------------------------------------------------------------------
@@ -460,7 +460,14 @@ alex_action_12 =  mkToken EQEQ
 alex_action_13 =  mkToken INTCONST 
 alex_action_14 =  mkToken RP 
 alex_action_15 =  mkToken ERROR_TOKEN 
+{-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
+{-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
+{-# LINE 1 "<built-in>" #-}
+{-# LINE 1 "<command-line>" #-}
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "/usr/include/stdc-predef.h" #-}
 
+{-# LINE 17 "/usr/include/stdc-predef.h" #-}
 
 
 
@@ -507,6 +514,8 @@ alex_action_15 =  mkToken ERROR_TOKEN
 
 
 
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "/home/alanz/.stack/programs/x86_64-linux/ghc-tinfo6-8.4.4/lib/ghc-8.4.4/include/ghcversion.h" #-}
 
 
 
@@ -522,6 +531,8 @@ alex_action_15 =  mkToken ERROR_TOKEN
 
 
 
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "/tmp/ghc13521_0/ghc_2.h" #-}
 
 
 
@@ -702,19 +713,8 @@ alex_action_15 =  mkToken ERROR_TOKEN
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
 --
@@ -724,7 +724,7 @@ alex_action_15 =  mkToken ERROR_TOKEN
 -- -----------------------------------------------------------------------------
 -- INTERNALS and main scanner engine
 
-
+{-# LINE 21 "alex-templates/GenericTemplate.hs" #-}
 
 
 
@@ -738,7 +738,7 @@ alex_action_15 =  mkToken ERROR_TOKEN
 #define GTE(n,m) (n >=# m)
 #define EQ(n,m) (n ==# m)
 #endif
-
+{-# LINE 51 "alex-templates/GenericTemplate.hs" #-}
 
 
 data AlexAddr = AlexA# Addr#
@@ -843,9 +843,9 @@ alexScanUser user__ input__ (I# (sc))
 alex_scan_tkn user__ orig_input len input__ s last_acc =
   input__ `seq` -- strict in the input
   let
-  new_acc = (check_accs (alex_accept `quickIndex` (I# (s))))
+  (input__la,new_acc) = (check_accs input__ (alex_accept `quickIndex` (I# (s))))
   in
-  new_acc `seq`
+  (input__la,new_acc) `seq`
   case alexGetByte input__ of
      Nothing -> (new_acc, input__)
      Just (c, new_input) ->
@@ -871,20 +871,34 @@ alex_scan_tkn user__ orig_input len input__ s last_acc =
                         new_input new_s new_acc
       }
   where
-        check_accs (AlexAccNone) = last_acc
-        check_accs (AlexAcc a  ) = AlexLastAcc a input__ (I# (len))
-        check_accs (AlexAccSkip) = AlexLastSkip  input__ (I# (len))
+        push_la (_,la,_,_,_) (p,_,c,b,s) =
 
-        check_accs (AlexAccPred a predx rest)
-           | predx user__ orig_input (I# (len)) input__
-           = AlexLastAcc a input__ (I# (len))
-           | otherwise
-           = check_accs rest
-        check_accs (AlexAccSkipPred predx rest)
-           | predx user__ orig_input (I# (len)) input__
-           = AlexLastSkip input__ (I# (len))
-           | otherwise
-           = check_accs rest
+          trace ("************push_la:la=" ++ show la)
+
+          (p,la,c,b,s)
+
+        check_accs i (AlexAccNone) = (i,last_acc)
+        check_accs i (AlexAcc a  ) = (i,AlexLastAcc a input__ (I# (len)))
+        check_accs i (AlexAccSkip) = (i,AlexLastSkip  input__ (I# (len)))
+
+        check_accs i (AlexAccPred a predx rest)
+          = let
+              (i',p) =
+
+                       trace ("#########in check_accs pred")
+
+                             (predx user__ orig_input (I# (len)) input__)
+            in if p
+                then (i',AlexLastAcc a (push_la i input__)
+                                                      (I# (len)) )
+                else check_accs i' rest
+        check_accs i (AlexAccSkipPred predx rest)
+           = let (i',p) = predx user__ orig_input
+                                                      (I# (len)) input__
+             in if p
+               then (i',AlexLastSkip (push_la i input__)
+                                                      (I# (len)) )
+               else check_accs i' rest
 
 
 data AlexLastAcc
@@ -900,7 +914,7 @@ data AlexAcc user
   | AlexAccPred Int (AlexAccPred user) (AlexAcc user)
   | AlexAccSkipPred (AlexAccPred user) (AlexAcc user)
 
-type AlexAccPred user = user -> AlexInput -> Int -> AlexInput -> Bool
+type AlexAccPred user = user -> AlexInput -> Int -> AlexInput -> (AlexInput, Bool)
 
 -- -----------------------------------------------------------------------------
 -- Predicates on a rule
@@ -918,9 +932,16 @@ alexPrevCharIsOneOf arr _ input__ _ _ = arr ! alexInputPrevChar input__
 
 --alexRightContext :: Int -> AlexAccPred _
 alexRightContext (I# (sc)) user__ _ _ input__ =
+     trace ("alexRightContext starting") $
      case alex_scan_tkn user__ input__ 0# input__ sc AlexNone of
-          (AlexNone, _) -> False
-          _ -> True
+          (AlexNone, input__') ->
+            trace ("*********************alexRightContext:1:la=" ++ show (get_la input__'))
+            (input__', False)
+          (_,        input__') ->
+            trace ("*********************alexRightContext:2:la=" ++ show (get_la input__'))
+            (input__', True)
         -- TODO: there's no need to find the longest
         -- match when checking the right context, just
         -- the first match will do.
+
+get_la (_,la,_,_,_) = la
