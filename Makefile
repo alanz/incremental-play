@@ -10,9 +10,10 @@ ALEX=alex
 lexer : parsers/PaperExample.x templates
 	$(ALEX) --ghc --debug \
     --template=./alex-templates \
-    --info \
     -o generated-parsers/PaperExample.hs \
     parsers/PaperExample.x
+
+    # --info \
 
 #-- ------------------------------------------
 

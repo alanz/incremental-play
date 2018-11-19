@@ -311,14 +311,7 @@ lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
 -- Main entry point. "calc" is the parser entry point generated above
 /* main = getContents >>= print . calc . lexer */
-{-# LINE 1 "happy-templates/GenericTemplate.hs" #-}
-{-# LINE 1 "happy-templates/GenericTemplate.hs" #-}
-{-# LINE 1 "<built-in>" #-}
-{-# LINE 1 "<command-line>" #-}
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/usr/include/stdc-predef.h" #-}
 
-{-# LINE 17 "/usr/include/stdc-predef.h" #-}
 
 
 
@@ -365,8 +358,6 @@ lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/home/alanz/.stack/programs/x86_64-linux/ghc-8.4.3/lib/ghc-8.4.3/include/ghcversion.h" #-}
 
 
 
@@ -382,8 +373,6 @@ lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/tmp/ghc1167_0/ghc_2.h" #-}
 
 
 
@@ -444,11 +433,22 @@ lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "happy-templates/GenericTemplate.hs" #-}
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 
-{-# LINE 13 "happy-templates/GenericTemplate.hs" #-}
+
 
 
 
@@ -464,7 +464,7 @@ lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 #define GTE(n,m) (n Happy_GHC_Exts.>=# m)
 #define EQ(n,m) (n Happy_GHC_Exts.==# m)
 #endif
-{-# LINE 46 "happy-templates/GenericTemplate.hs" #-}
+
 
 data Happy_IntList = HappyCons Happy_GHC_Exts.Int# Happy_IntList
 
@@ -474,9 +474,9 @@ data Happy_IntList = HappyCons Happy_GHC_Exts.Int# Happy_IntList
 
 
 
-{-# LINE 77 "happy-templates/GenericTemplate.hs" #-}
 
-{-# LINE 91 "happy-templates/GenericTemplate.hs" #-}
+
+
 
 
 
@@ -913,7 +913,7 @@ hasYield (Node (Val { last_terminal = mlt}) _) = isJust mlt
 -----------------------------------------------------------------------------
 -- Arrays only: do the next action
 
-{-# LINE 557 "happy-templates/GenericTemplate.hs" #-}
+
 
 
 indexShortOffAddr (HappyA# arr) off =
@@ -943,7 +943,7 @@ data HappyAddr = HappyA# Happy_GHC_Exts.Addr#
 -----------------------------------------------------------------------------
 -- HappyState data type (not arrays)
 
-{-# LINE 597 "happy-templates/GenericTemplate.hs" #-}
+
 
 -----------------------------------------------------------------------------
 -- Shifting a token
@@ -1098,7 +1098,7 @@ happyGoto am nt j inp st =
    where off = indexShortOffAddr happyGotoOffsets st
          off_i = (off Happy_GHC_Exts.+# nt)
          new_state = indexShortOffAddr happyTable off_i
-{-# LINE 761 "happy-templates/GenericTemplate.hs" #-}
+
 
 -----------------------------------------------------------------------------
 -- Error recovery (0# is the error token)

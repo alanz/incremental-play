@@ -17,22 +17,28 @@ library
   hs-source-dirs:      src generated-parsers
   exposed-modules:     Language.Incremental.LSP
                        Language.Incremental.Visualise
+                       Language.Incremental.Lexer
+                       Language.Incremental.LexerTypes
                        Language.Incremental.ParserTypes
+                       Language.Incremental.Versioning
   other-modules:       Repetitive2
   build-depends:       base >=4.9 && <4.13
                      , ansi-wl-pprint
                      , array
                      , containers
                      , data-default
+                     , fingertree
                      , haskell-lsp
                      , hslogger
                      , lens
+                     , ListZipper
                      , megaparsec
                      , mtl
                      , optparse-applicative
                      , prettyprinter
                      , prettyprinter-ansi-terminal
                      , protolude
+                     , rosezipper
                      , stm
                      , text
                      , unix
