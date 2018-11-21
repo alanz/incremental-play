@@ -20,6 +20,7 @@ library
                        Language.Incremental.Lexer
                        Language.Incremental.LexerTypes
                        Language.Incremental.ParserTypes
+                       Language.Incremental.Versioned
                        Language.Incremental.Versioning
   other-modules:       Repetitive2
   build-depends:       base >=4.9 && <4.13
@@ -35,6 +36,7 @@ library
                      , megaparsec
                      , mtl
                      , optparse-applicative
+                     , ordered-containers
                      , prettyprinter
                      , prettyprinter-ansi-terminal
                      , protolude
@@ -53,30 +55,58 @@ executable incremental-play
   ghc-options:            -Wall
   hs-source-dirs:
     ./app
-  build-depends:          base >= 4.9  && < 4.13
-                        , array
-                        , containers
-                        , incremental-play
-                        , lens
-                        , prettyprinter
-                        , prettyprinter-ansi-terminal
-                        , zippers
+  build-depends:       base >= 4.9  && < 4.13
+                     , array
+                     , containers
+                     , incremental-play
+                     , lens
+                     , prettyprinter
+                     , prettyprinter-ansi-terminal
+                     , zippers
   --                      ,  happy == 1.20.*
   -- build-tools:            happy == 1.20.*
   default-language:    Haskell2010
 
--- test-suite spec
---   type:
---       exitcode-stdio-1.0
---   ghc-options:
---       -Wall
---   main-is:
---       Main.hs
---   hs-source-dirs:
---     test
---   other-modules:
---   build-depends:
---       base        >= 4.9  && < 4.11
+test-suite spec
+  type:
+      exitcode-stdio-1.0
+  ghc-options:
+      -Wall
+  main-is:
+      Main.hs
+  hs-source-dirs:
+    test
+    src
+  other-modules:       Spec
+                       Language.Incremental.Lexer
+                       Language.Incremental.LexerTypes
+                       Language.Incremental.Versioned
+                       LexerSpec
+                       VersionedSpec
+  build-depends:       base        >= 4.9  && < 4.13
+                     , ListZipper
+                     , ansi-wl-pprint
+                     , array
+                     , containers
+                     , data-default
+                     , fingertree
+                     , haskell-lsp
+                     , hslogger
+                     , hspec
+                     , incremental-play
+                     , lens
+                     , megaparsec
+                     , mtl
+                     , optparse-applicative
+                     , ordered-containers
+                     , prettyprinter
+                     , prettyprinter-ansi-terminal
+                     , protolude
+                     , rosezipper
+                     , stm
+                     , text
+                     , unix
+                     , zippers
 
 source-repository head
   type:     git

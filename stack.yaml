@@ -2,7 +2,8 @@ resolver: lts-12.18
 packages:
 - .
 extra-deps:
+- ListZipper-1.2.0.2
 - haskell-lsp-0.8.0.1
 - haskell-lsp-types-0.8.0.1
-- ListZipper-1.2.0.2
+- ordered-containers-0.1.1
 - rosezipper-0.2

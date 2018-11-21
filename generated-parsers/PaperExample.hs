@@ -236,6 +236,7 @@ lexTokenStream buf
         _   -> liftM (ltok { tokState = sc, tokLookAhead = la } :) go
 
 eg = putStr $ lexShow "\n /* check for debugging */ # if(DEBUG==1)"
+pp s = putStr $ lexShow s
 
 main = do
   print . runAlex "/* baz */" $ alexMonadScan
