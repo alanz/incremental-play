@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Language.Incremental.Lexer
   (
     -- Token(..)
@@ -10,9 +11,15 @@ module Language.Incremental.Lexer
 
 import Language.Incremental.LexerTypes
 import Data.FingerTree
-import qualified Data.Set as Set
 import Data.Monoid
+import Data.List
 import Data.List.Zipper as Z
+
+import Debug.Trace
+
+-- ---------------------------------------------------------------------
+
+-- debug = flip trace
 
 -- ---------------------------------------------------------------------
 
@@ -21,16 +28,33 @@ type TokenTree t = FingerTree (Sum Int) (Token t)
 instance Measured (Sum Int) (Token t) where
   measure _ = 1
 
+data LaSetItem t = LA { laTok :: Token t, laCla :: Int, laCnt :: Int }
+               deriving (Eq)
+
+instance Show (LaSetItem t) where
+  show = pLaSetItem
+
+pLaSetItem :: LaSetItem t -> String
+pLaSetItem (LA t cla cnt)
+  = "(" ++ show (tokLexeme t) ++ ","++ show cla ++ "," ++ show cnt ++ ")"
+
+-- pls :: [LaSetItem t] -> String
+-- pls ls = intercalate ",\n" $ map pLaSetItem ls
+
 -- ---------------------------------------------------------------------
 
-fixLookBacks' :: (Eq t, Ord t ) => [Token t] -> [Token t]
-fixLookBacks' toks = (toList . fixLookBacks . Z.fromList) toks
+fixLookBacks' :: (Eq t, Ord t, Show t) => [Token t] -> [Token t]
+fixLookBacks' toks
+  = (toList . fixLookBacks . Z.fromList) $ addSentinels toks
+
+addSentinels :: [Token t] -> [Token t]
+addSentinels toks = (bosToken:toks) ++ [eosToken]
 
 -- ---------------------------------------------------------------------
 
 -- | Given a token tree split at the point of interest, so the first
 -- token we care about is the start of tokr
-fixLookBacks :: (Eq t,Ord t,Ord (Token t)) => Zipper (Token t) -> Zipper (Token t)
+fixLookBacks :: forall t. (Eq t,Ord t,Show t) => Zipper (Token t) -> Zipper (Token t)
 fixLookBacks tokz = tokz'
   where
     -- Extract lookback count (if different in current version, use
@@ -48,26 +72,122 @@ fixLookBacks tokz = tokz'
           | otherwise   = go_boot (l - 1) (Z.left tz)
 
      -- Initialize the lookahead set from the bootstrap region.
-    la_set = go_la Set.empty boot_tok
+    la_set :: [LaSetItem t]
+    la_set = go_la [] boot_tok
       where
-        -- go_la :: (Eq t) => Set.Set a -> Zipper (Token t) -> _
+        go_la :: [LaSetItem t] -> Zipper (Token t) -> [LaSetItem t]
         go_la acc tz
           | cursor tz == cursor tokz = acc
-          | otherwise = go_la (Set.insert (cursor tz) (advance acc len))  (Z.right tz)
+          | otherwise = go_la (add_item (cursor tz) (advance acc len)) (Z.right tz)
               where
-                len = length $ tokLexeme $ cursor tz
-    tokz' = tokz
+                len = tokenLen $ cursor tz
 
+    -- Set the lookback for re-lexed tokens.
+    (la_lb,tz_lb) = go_lb la_set tokz
+      where
+        go_lb :: [LaSetItem t] -> Zipper (Token t) -> ([LaSetItem t], Zipper (Token t))
+        go_lb la tz
+          | tokRelexed (cursor tz) = go_lb la' (next_token tz')
+          | otherwise = (la,tz)
+            where
+              (la',tz') = processLookback la tz
+
+    -- Symmetric to bootstrap: process unmodified tokens reached by
+    -- lookahead from re-lexed area.
+    (la_rl,tz_rl) = go_lb la_lb tz_lb
+      where
+        go_lb la tz
+          | not (isEosToken tok) &&
+            not (tokRelexed tok) &&
+            not (all_items_discardable la) &&
+            (tokLookBack tok /= compute_lookback la)
+             = go_lb la' (next_token tz')
+          | otherwise = (la,tz)
+            where
+              tok = cursor tz
+              (la',tz') = processLookback la tz
+
+    tokz' = tz_rl
+
+
+-- ---------------------------------------------------------------------
+
+{-
+      tok->lookback = la_set.compute_lookback();
+      la_set.advance(tok->length);
+      la_set.add_item(tok);
+      tok = next_token(tok);
+-}
+processLookback :: (Show t)
+                => [LaSetItem t]
+                     -> Zipper (Token t) -> ([LaSetItem t], Zipper (Token t))
+processLookback la tz = (la',tz')
+  where
+    lb = compute_lookback la
+    t = cursor tz
+    t' = t { tokLookBack = lb }
+
+    la' = add_item t' (advance la (tokenLen t))
+
+    tz' = replace t' tz
+
+-- ---------------------------------------------------------------------
 
 -- advance (int offset)
 --   replace <tok,cla,cnt> in list with <tok,cla - offset,cnt + 1>
-advance :: (Ord t) => Set.Set (Token t) -> Int -> Set.Set (Token t)
-advance la_set offset = Set.map (advance_tok offset) la_set
+advance :: [LaSetItem t] -> Int -> [LaSetItem t]
+advance la_set offset = r
+  where
+    r = filter positiveCla $ fmap advance_tok la_set
+    advance_tok :: LaSetItem t -> LaSetItem t
+    advance_tok (LA tok cla cnt) = LA tok (cla - offset) (cnt + 1)
+    positiveCla (LA _ cla _) = cla > 0
 
-advance_tok :: Int -> Token t -> Token t
-advance_tok offset t@(Tok { tokLookAhead = la, tokLookBack = lb })
-  = t { tokLookAhead = la - offset, tokLookBack = lb + 1 }
+-- ---------------------------------------------------------------------
 
+-- int compute_lookback ()
+--   remove <tok,cla,cnt> s.t. cla <= 0 from list
+--   if (list == {}) return 0;
+--   else return max cnt | <tok,cla,cnt> in list
+compute_lookback :: (Show t) => [LaSetItem t] -> Int
+compute_lookback la = r
+  where
+    r = foldl' check 0 la
+    check acc (LA _tok cla' cnt')
+      | cla' > 0 = max cnt' acc
+      | otherwise = acc
+
+-- ---------------------------------------------------------------------
+-- add_item (TOKEN *tok)
+--   add <tok,tok->lookahead,0> to list
+add_item :: Token t -> [LaSetItem t] -> [LaSetItem t]
+add_item tok la
+  = if tokLookAhead tok > 0
+      then LA tok (tokLookAhead tok) 1 : la
+      else LA tok (tokLookAhead tok) 0 : la
+
+-- ---------------------------------------------------------------------
+
+-- bool all_items_discardable ()
+--  forall <tok,cla,cnt> in list, !was_re_lexed(tok)
+all_items_discardable :: [LaSetItem t] -> Bool
+all_items_discardable la = all (not . tokRelexed . laTok) la
+
+-- ---------------------------------------------------------------------
+
+-- | The token stream should always have a BOS token at the beginning as a sentinel.
+previous_token :: Zipper (Token t) -> Zipper (Token t)
+previous_token tz
+  | endp (left tz) = tz
+  | otherwise = left tz
+
+-- | The token stream should always have a EOS token at the end as a sentinel.
+next_token :: Zipper (Token t) -> Zipper (Token t)
+next_token tz
+  | endp (right tz) = tz
+  | otherwise = right tz
+
+-- ---------------------------------------------------------------------
 {-
 P65 Figure 5.15
 
@@ -120,7 +240,7 @@ advance (int offset)
 int compute_lookback ()
   remove <tok,cla,cnt> s.t. cla <= 0 from list
   if (list == {}) return 0;
-  else return max cnt |v<tok,cla,cnt> in list
+  else return max cnt | <tok,cla,cnt> in list
 
 add_item (TOKEN *tok)
   add <tok,tok->lookahead,0> to list
