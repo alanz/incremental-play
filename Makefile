@@ -1,4 +1,4 @@
-all: repetitive2 repetitive precedence simple lexer
+all: repetitive2 repetitive3 repetitive precedence simple lexer
 
 # HAPPY= cabal new-run happy:happy --
 # HAPPY=./dist-newstyle/build/x86_64-linux/ghc-8.4.3/happy-1.20.0/build/happy/happy
@@ -23,6 +23,11 @@ repetitive2 : parsers/Repetitive2.y templates
     -o generated-parsers/Repetitive2.hs \
     parsers/Repetitive2.y
 
+repetitive3 : parsers/Repetitive3.y templates
+	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=Repetitive3.info \
+    --lr0 --action --goto --lookaheads \
+    -o generated-parsers/Repetitive3.hs \
+    parsers/Repetitive3.y
 
 repetitive : parsers/Repetitive.y templates
 	$(HAPPY) --ghc --incremental --debug --template=./happy-templates --info=Repetitive.info \

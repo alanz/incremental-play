@@ -49,8 +49,8 @@ data UnversionedData = UnversionedData
 
 data Versioned t =
   Versioned
-    { vCached :: t -- most recent version value, cached.
-    , vData :: OMap.OMap VersionId t
+    { vCached  :: t -- most recent version value, cached.
+    , vData    :: OMap.OMap VersionId t
     , vChanged :: Bool
     }
 deriving instance (Show t) => Show (Versioned t)

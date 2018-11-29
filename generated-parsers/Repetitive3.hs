@@ -1,17 +1,19 @@
 {-# OPTIONS_GHC -w #-}
 {-# OPTIONS -XMagicHash -XBangPatterns -XTypeSynonymInstances -XFlexibleInstances -cpp #-}
--- This file is (initially) based on the example in happy manual
--- https://www.haskell.org/happy/doc/html/sec-using.html
 {-# LANGUAGE OverloadedStrings #-}
-module ExprPrecedence where
+{-# LANGUAGE DeriveFoldable #-}
+module Repetitive3 where
 
 import Data.Char
+import Data.Foldable
 import Data.Maybe
 import Data.List
 import Data.Tree
 import qualified Data.Bits as Bits
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal
+import Language.Incremental.LexerTypes ( TokWrapper(..), TokenL(..) )
+import qualified Language.Incremental.LexerTypes as LT
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import qualified GHC.Exts as Happy_GHC_Exts
@@ -25,47 +27,52 @@ import Control.Monad (ap)
 
 -- using template file ./happy-templates/IncrementalTemplate-ghc-debug
 
-data HappyAbsSyn t4 t5 t6 t7 t8
-	= HappyTerminal (Token)
+data HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13
+	= HappyTerminal (TokenL Token)
 	| HappyErrorToken Int
 	| HappyAbsSyn4 t4
 	| HappyAbsSyn5 t5
 	| HappyAbsSyn6 t6
 	| HappyAbsSyn7 t7
 	| HappyAbsSyn8 t8
+	| HappyAbsSyn9 t9
+	| HappyAbsSyn10 t10
+	| HappyAbsSyn11 t11
+	| HappyAbsSyn12 t12
+	| HappyAbsSyn13 t13
 
 	deriving Show
 
 
-data Tok = Tok Happy_GHC_Exts.Int# (Token)
+data Tok = Tok Happy_GHC_Exts.Int# (TokenL Token)
   deriving Show
 instance Pretty Tok
 happyExpList :: HappyAddr
-happyExpList = HappyA# "\x18\x00\x04\x00\x1c\x00\x00\x20\x00\x80\x07\x00\x00\x06\x80\x01\x60\x00\x18\x00\x00\x00\x00\x00\x00\x80\x01\x60\x00\x00"#
+happyExpList = HappyA# "\x18\x00\x00\x01\x00\xc0\x21\x00\x00\x00\x20\x00\x00\x00\x00\x00\xd6\x03\x00\x00\x00\x08\x04\x00\x00\x00\xd4\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14\x00\x00\x00\x00\x00\x00\x00\x00"#
 
 {-# NOINLINE happyExpListPerState #-}
 happyExpListPerState st =
     token_strs_expected
-  where token_strs = ["error","%dummy","%start_calc","Ultraroot","bos","eos","tree","Exp","int","'+'","'-'","'*'","'/'","%eof"]
-        bit_start = st * 14
-        bit_end = (st + 1) * 14
+  where token_strs = ["error","%dummy","%start_calc","Ultraroot","bos","eos","tree","Root","A","Bs","B","C","listb__B__","'a'","'b'","'B'","'d'","'D'","'c'","%eof"]
+        bit_start = st * 20
+        bit_end = (st + 1) * 20
         read_bit = readArrayBit happyExpList
         bits = map read_bit [bit_start..bit_end - 1]
-        bits_indexed = zip bits [0..13]
+        bits_indexed = zip bits [0..19]
         token_strs_expected = concatMap f bits_indexed
         f (False, _) = []
         f (True, nr) = [token_strs !! nr]
 
 happyGotoValidArray :: HappyAddr
-happyGotoValidArray = HappyA# "\x30\x40\x00\x06\x00\x04\x00\x00\x80\x00\x01\x02\x04\x00\x00\x00\x00\x00\x00\x00"#
+happyGotoValidArray = HappyA# "\x30\x00\x08\x00\x38\x00\x00\x40\x00\x00\x00\xc0\x02\x00\x00\x10\x00\x00\x80\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x28\x00\x00\x00\x00\x00\x00"#
 
 {-# NOINLINE happyGotoValid #-}
 happyGotoValid st nt = valid
-  where bit_nr = nt + st * 9
+  where bit_nr = nt + st * 14
         valid = readArrayBit happyGotoValidArray bit_nr
 
 happyFragileStateArray :: HappyAddr
-happyFragileStateArray = HappyA# "\x20\xf0\x00\x00"#
+happyFragileStateArray = HappyA# "\x00\x00\x01\x00\x00\x00"#
 
 {-# NOINLINE happyFragileState #-}
 happyFragileState st = fragile
@@ -73,24 +80,24 @@ happyFragileState st = fragile
         fragile = readArrayBit happyFragileStateArray bit_nr
 
 happyActOffsets :: HappyAddr
-happyActOffsets = HappyA# "\x15\x00\x1e\x00\x01\x00\x0e\x00\x1c\x00\xfa\xff\x00\x00\x0f\x00\x0d\x00\x0b\x00\x09\x00\x00\x00\x00\x00\x00\x00\x03\x00\x03\x00\x00\x00"#
+happyActOffsets = HappyA# "\x21\x00\x23\x00\x0e\x00\x13\x00\x18\x00\x00\x00\xfa\xff\x00\x00\x0c\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00"#
 
 happyGotoOffsets :: HappyAddr
-happyGotoOffsets = HappyA# "\x0a\x00\x1d\x00\x05\x00\x00\x00\x1b\x00\x00\x00\x00\x00\x18\x00\x17\x00\x16\x00\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
+happyGotoOffsets = HappyA# "\x20\x00\x15\x00\x1a\x00\x00\x00\x0b\x00\x00\x00\x11\x00\x00\x00\x03\x00\x00\x00\xfc\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfc\xff\x00\x00\x00\x00\x00\x00"#
 
 happyDefActions :: HappyAddr
-happyDefActions = HappyA# "\xfd\xff\x00\x00\x00\x00\x00\x00\xfc\xff\xfb\xff\xf6\xff\x00\x00\x00\x00\x00\x00\x00\x00\xfe\xff\xf7\xff\xf8\xff\xf9\xff\xfa\xff"#
+happyDefActions = HappyA# "\xfd\xff\x00\x00\xf8\xff\x00\x00\xfc\xff\xfb\xff\x00\x00\xf9\xff\xf1\xff\xf0\xff\xf7\xff\xf6\xff\xf5\xff\xf4\xff\xf3\xff\xfe\xff\xef\xff\xfa\xff\xf2\xff"#
 
 happyCheck :: HappyAddr
-happyCheck = HappyA# "\xff\xff\x07\x00\x08\x00\x09\x00\x0a\x00\x04\x00\x05\x00\x06\x00\x03\x00\x04\x00\x00\x00\x01\x00\x09\x00\x0a\x00\x05\x00\x06\x00\x05\x00\x06\x00\x05\x00\x06\x00\x05\x00\x06\x00\x01\x00\x02\x00\x04\x00\x0b\x00\x04\x00\x04\x00\x04\x00\x02\x00\x01\x00\x03\x00\x02\x00\xff\xff\xff\xff\xff\xff\xff\xff"#
+happyCheck = HappyA# "\xff\xff\x07\x00\x08\x00\x07\x00\x0a\x00\x09\x00\x0c\x00\x0d\x00\x0e\x00\x0f\x00\x08\x00\x08\x00\x0a\x00\x02\x00\x0c\x00\x0d\x00\x0e\x00\x0f\x00\x04\x00\x05\x00\x06\x00\x09\x00\x01\x00\x06\x00\x07\x00\x0b\x00\x09\x00\x03\x00\x10\x00\x03\x00\x04\x00\x05\x00\x00\x00\x01\x00\x01\x00\x02\x00\x11\x00\x02\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"#
 
 happyTable :: HappyAddr
-happyTable = HappyA# "\x00\x00\x08\x00\x09\x00\x0a\x00\x0b\x00\x05\x00\x06\x00\x07\x00\x04\x00\x05\x00\x03\x00\x02\x00\x0a\x00\x0b\x00\x0d\x00\x07\x00\x0e\x00\x07\x00\x0f\x00\x07\x00\x10\x00\x07\x00\x04\x00\x03\x00\x0c\x00\xff\xff\x0d\x00\x0e\x00\x0f\x00\x0b\x00\x02\x00\x0c\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
+happyTable = HappyA# "\x00\x00\x09\x00\x0a\x00\x09\x00\x0b\x00\x10\x00\x0c\x00\x0d\x00\x0e\x00\x0f\x00\x0a\x00\x11\x00\x11\x00\x0f\x00\x0c\x00\x0d\x00\x0e\x00\x0f\x00\x05\x00\x06\x00\x07\x00\x12\x00\x02\x00\x08\x00\x09\x00\x08\x00\x0a\x00\x10\x00\x13\x00\x04\x00\x05\x00\x06\x00\x03\x00\x02\x00\x04\x00\x03\x00\xff\xff\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
 
 
--- [(ActionEntry,0,-3,1,2,[(1,4),(2,3)]),(ActionEntry,1,0,0,1,[(2,3)]),(ActionEntry,2,0,2,3,[(4,5),(5,6),(6,7)]),(ActionEntry,3,0,0,1,[(11,-1)]),(ActionEntry,4,-4,0,1,[(3,12)]),(ActionEntry,5,-5,3,4,[(7,8),(8,9),(9,10),(10,11)]),(ActionEntry,6,-10,0,0,[]),(ActionEntry,7,0,1,2,[(5,16),(6,7)]),(ActionEntry,8,0,1,2,[(5,15),(6,7)]),(ActionEntry,9,0,1,2,[(5,14),(6,7)]),(ActionEntry,10,0,1,2,[(5,13),(6,7)]),(ActionEntry,11,-2,0,0,[]),(ActionEntry,12,-9,0,0,[]),(ActionEntry,13,-8,0,0,[]),(ActionEntry,14,-7,1,2,[(9,10),(10,11)]),(ActionEntry,15,-6,1,2,[(9,10),(10,11)])]
+-- [(ActionEntry,0,-3,1,2,[(1,4),(2,3)]),(ActionEntry,1,0,0,1,[(2,3)]),(ActionEntry,2,-8,7,4,[(4,5),(5,6),(6,7),(11,8)]),(ActionEntry,3,0,0,1,[(17,-1)]),(ActionEntry,4,-4,0,1,[(3,16)]),(ActionEntry,5,-5,0,0,[]),(ActionEntry,6,0,8,7,[(7,9),(8,10),(10,11),(12,12),(13,13),(14,14),(15,15)]),(ActionEntry,7,-7,0,0,[]),(ActionEntry,8,-15,7,2,[(9,18),(16,19)]),(ActionEntry,9,-16,0,0,[]),(ActionEntry,10,-9,7,6,[(8,10),(10,17),(12,12),(13,13),(14,14),(15,15)]),(ActionEntry,11,-10,0,0,[]),(ActionEntry,12,-11,0,0,[]),(ActionEntry,13,-12,0,0,[]),(ActionEntry,14,-13,0,0,[]),(ActionEntry,15,-2,0,0,[]),(ActionEntry,16,-17,7,6,[(8,10),(10,17),(12,12),(13,13),(14,14),(15,15)]),(ActionEntry,17,-6,0,0,[]),(ActionEntry,18,-14,0,0,[])]
 
-happyReduceArr = Happy_Data_Array.array (1, 9) [
+happyReduceArr = Happy_Data_Array.array (1, 16) [
 	(1 , happyReduce_1),
 	(2 , happyReduce_2),
 	(3 , happyReduce_3),
@@ -99,11 +106,18 @@ happyReduceArr = Happy_Data_Array.array (1, 9) [
 	(6 , happyReduce_6),
 	(7 , happyReduce_7),
 	(8 , happyReduce_8),
-	(9 , happyReduce_9)
+	(9 , happyReduce_9),
+	(10 , happyReduce_10),
+	(11 , happyReduce_11),
+	(12 , happyReduce_12),
+	(13 , happyReduce_13),
+	(14 , happyReduce_14),
+	(15 , happyReduce_15),
+	(16 , happyReduce_16)
 	]
 
-happy_n_terms = 7 :: Int
-happy_n_nonterms = 5 :: Int
+happy_n_terms = 8 :: Int
+happy_n_nonterms = 10 :: Int
 
 happyReduce_1 am fragile = happySpecReduce_3  am 0# (happyReduction_1 fragile)
 happyReduction_1 fragile p3
@@ -132,50 +146,84 @@ happyReduction_4 fragile p1@(Node (Val {here = (HappyAbsSyn8  happy_var_1)}) _)
 happyReduction_4 fragile _  = notHappyAtAll 
 
 happyReduce_5 am fragile = happySpecReduce_3  am 4# (happyReduction_5 fragile)
-happyReduction_5 fragile p3@(Node (Val {here = (HappyAbsSyn8  happy_var_3)}) _)
-	p2
-	p1@(Node (Val {here = (HappyAbsSyn8  happy_var_1)}) _)
+happyReduction_5 fragile p3
+	p2@(Node (Val {here = (HappyAbsSyn10  happy_var_2)}) _)
+	p1
 	 =  mkNode (HappyAbsSyn8
-		 (Plus happy_var_1 happy_var_3
+		 (Root happy_var_2
 	)) (Just 5) fragile [p1,p2,p3]
 happyReduction_5 fragile _ _ _  = notHappyAtAll 
 
-happyReduce_6 am fragile = happySpecReduce_3  am 4# (happyReduction_6 fragile)
-happyReduction_6 fragile p3@(Node (Val {here = (HappyAbsSyn8  happy_var_3)}) _)
-	p2
-	p1@(Node (Val {here = (HappyAbsSyn8  happy_var_1)}) _)
-	 =  mkNode (HappyAbsSyn8
-		 (Minus happy_var_1 happy_var_3
-	)) (Just 5) fragile [p1,p2,p3]
-happyReduction_6 fragile _ _ _  = notHappyAtAll 
+happyReduce_6 am fragile = happySpecReduce_1  am 5# (happyReduction_6 fragile)
+happyReduction_6 fragile p1
+	 =  mkNode (HappyAbsSyn9
+		 (()
+	)) (Just 6) fragile [p1]
 
-happyReduce_7 am fragile = happySpecReduce_3  am 4# (happyReduction_7 fragile)
-happyReduction_7 fragile p3@(Node (Val {here = (HappyAbsSyn8  happy_var_3)}) _)
-	p2
-	p1@(Node (Val {here = (HappyAbsSyn8  happy_var_1)}) _)
-	 =  mkNode (HappyAbsSyn8
-		 (Times happy_var_1 happy_var_3
-	)) (Just 5) fragile [p1,p2,p3]
-happyReduction_7 fragile _ _ _  = notHappyAtAll 
+happyReduce_7 am fragile = happySpecReduce_0  am 5# (happyReduction_7 fragile)
+happyReduction_7 fragile  =  mkNode (HappyAbsSyn9
+		 (()
+	)) (Just 6) fragile []
 
-happyReduce_8 am fragile = happySpecReduce_3  am 4# (happyReduction_8 fragile)
-happyReduction_8 fragile p3@(Node (Val {here = (HappyAbsSyn8  happy_var_3)}) _)
-	p2
-	p1@(Node (Val {here = (HappyAbsSyn8  happy_var_1)}) _)
-	 =  mkNode (HappyAbsSyn8
-		 (Div happy_var_1 happy_var_3
-	)) (Just 5) fragile [p1,p2,p3]
-happyReduction_8 fragile _ _ _  = notHappyAtAll 
+happyReduce_8 am fragile = happySpecReduce_1  am 6# (happyReduction_8 fragile)
+happyReduction_8 fragile p1@(Node (Val {here = (HappyAbsSyn13  happy_var_1)}) _)
+	 =  mkNode (HappyAbsSyn10
+		 (toList happy_var_1
+	)) (Just 7) fragile [p1]
+happyReduction_8 fragile _  = notHappyAtAll 
 
-happyReduce_9 am fragile = happySpecReduce_1  am 4# (happyReduction_9 fragile)
-happyReduction_9 fragile p1@(Node (Val {here = (HappyTerminal (TokenInt happy_var_1))}) _)
-	 =  mkNode (HappyAbsSyn8
-		 (Int happy_var_1
-	)) (Just 5) fragile [p1]
-happyReduction_9 fragile _  = notHappyAtAll 
+happyReduce_9 am fragile = happySpecReduce_1  am 7# (happyReduction_9 fragile)
+happyReduction_9 fragile p1
+	 =  mkNode (HappyAbsSyn11
+		 (BL
+	)) (Just 8) fragile [p1]
+
+happyReduce_10 am fragile = happySpecReduce_1  am 7# (happyReduction_10 fragile)
+happyReduction_10 fragile p1
+	 =  mkNode (HappyAbsSyn11
+		 (BU
+	)) (Just 8) fragile [p1]
+
+happyReduce_11 am fragile = happySpecReduce_1  am 7# (happyReduction_11 fragile)
+happyReduction_11 fragile p1
+	 =  mkNode (HappyAbsSyn11
+		 (Bd
+	)) (Just 8) fragile [p1]
+
+happyReduce_12 am fragile = happySpecReduce_1  am 7# (happyReduction_12 fragile)
+happyReduction_12 fragile p1
+	 =  mkNode (HappyAbsSyn11
+		 (BD
+	)) (Just 8) fragile [p1]
+
+happyReduce_13 am fragile = happySpecReduce_1  am 8# (happyReduction_13 fragile)
+happyReduction_13 fragile p1
+	 =  mkNode (HappyAbsSyn12
+		 (()
+	)) (Just 9) fragile [p1]
+
+happyReduce_14 am fragile = happySpecReduce_0  am 8# (happyReduction_14 fragile)
+happyReduction_14 fragile  =  mkNode (HappyAbsSyn12
+		 (()
+	)) (Just 9) fragile []
+
+happyReduce_15 am fragile = happySpecReduce_1  am 9# (happyReduction_15 fragile)
+happyReduction_15 fragile p1@(Node (Val {here = (HappyAbsSyn11  happy_var_1)}) _)
+	 =  mkNode (HappyAbsSyn13
+		 (BSingle happy_var_1
+	)) (Just 10) fragile [p1]
+happyReduction_15 fragile _  = notHappyAtAll 
+
+happyReduce_16 am fragile = happySpecReduce_2  am 9# (happyReduction_16 fragile)
+happyReduction_16 fragile p2@(Node (Val {here = (HappyAbsSyn13  happy_var_2)}) _)
+	p1@(Node (Val {here = (HappyAbsSyn13  happy_var_1)}) _)
+	 =  mkNode (HappyAbsSyn13
+		 (BDouble happy_var_1 happy_var_2
+	)) (Just 10) fragile [p1,p2]
+happyReduction_16 fragile _ _  = notHappyAtAll 
 
 happyNewToken verifying action sts stk [] =
-	happyDoAction NotVerifying 11# (mkTokensNode [Tok 11# notHappyAtAll]) action sts stk []
+	happyDoAction NotVerifying 17# (mkTokensNode [Tok 17# notHappyAtAll]) action sts stk []
 
 happyNewToken verifying action sts stk (t:ts) =
 	let cont i inp ts' = happyDoAction verifying i inp action sts stk ts' in
@@ -183,17 +231,18 @@ happyNewToken verifying action sts stk (t:ts) =
 	  [] -> cont 0# t ts;
 	  (Tok _ tk:tks) ->
 	    case tk of {
-		TokenInt happy_dollar_dollar -> cont 6# (setTerminals t (Tok 6# tk:tks)) ((setTerminals t tks):ts);
-		TokenPlus -> cont 7# (setTerminals t (Tok 7# tk:tks)) ((setTerminals t tks):ts);
-		TokenMinus -> cont 8# (setTerminals t (Tok 8# tk:tks)) ((setTerminals t tks):ts);
-		TokenTimes -> cont 9# (setTerminals t (Tok 9# tk:tks)) ((setTerminals t tks):ts);
-		TokenDiv -> cont 10# (setTerminals t (Tok 10# tk:tks)) ((setTerminals t tks):ts);
+		TokL { tokType = T TokenA  } -> cont 11# (setTerminals t (Tok 11# tk:tks)) ((setTerminals t tks):ts);
+		TokL { tokType = T TokenBL } -> cont 12# (setTerminals t (Tok 12# tk:tks)) ((setTerminals t tks):ts);
+		TokL { tokType = T TokenBU } -> cont 13# (setTerminals t (Tok 13# tk:tks)) ((setTerminals t tks):ts);
+		TokL { tokType = T TokenBd } -> cont 14# (setTerminals t (Tok 14# tk:tks)) ((setTerminals t tks):ts);
+		TokL { tokType = T TokenBD } -> cont 15# (setTerminals t (Tok 15# tk:tks)) ((setTerminals t tks):ts);
+		TokL { tokType = T TokenC  } -> cont 16# (setTerminals t (Tok 16# tk:tks)) ((setTerminals t tks):ts);
 		_ -> happyError' ((t:ts), [])
 		};
 
 	};
 
-happyError_ explist 11# tk tks = happyError' (tks, explist)
+happyError_ explist 17# tk tks = happyError' (tks, explist)
 happyError_ explist _ tk tks = happyError' ((tk:tks), explist)
 
 newtype HappyIdentity a = HappyIdentity a
@@ -228,39 +277,43 @@ happySeq = happyDontSeq
 parseError :: [t] -> a
 parseError _ = error "Parse error"
 
-data Exp
-      = Plus Exp Exp
-      | Minus Exp Exp
-      | Times Exp Exp
-      | Div Exp Exp
-      | Int Int
+data BinaryT a
+  = BEmpty
+  | BSingle a
+  | BDouble (BinaryT a) (BinaryT a)
+  deriving (Show, Foldable)
+
+data Root = Root [B]
       deriving Show
 
+data B = BL | BU | Bd | BD
+     deriving Show
+
 data Token
-      = TokenInt Int
-      | TokenPlus
-      | TokenMinus
-      | TokenTimes
-      | TokenDiv
+      = TokenA
+      | TokenBL
+      | TokenBU
+      | TokenBd
+      | TokenBD
+      | TokenC
  deriving Show
 
 
 
-lexer :: String -> [HappyInput]
+-- lexer :: String -> [HappyInput]
 lexer str = [mkTokensNode (lexer' str)]
 
 lexer' [] = []
 lexer' (c:cs)
       | isSpace c = lexer' cs
-      | isDigit c = lexNum (c:cs)
-lexer' ('+':cs) = mkTok TokenPlus : lexer' cs
-lexer' ('-':cs) = mkTok TokenMinus : lexer' cs
-lexer' ('*':cs) = mkTok TokenTimes : lexer' cs
-lexer' ('/':cs) = mkTok TokenDiv : lexer' cs
+lexer' ('a':cs) = LT.mkTok "a" TokenA  : lexer' cs
+lexer' ('b':cs) = LT.mkTok "b" TokenBL : lexer' cs
+lexer' ('B':cs) = LT.mkTok "B" TokenBU : lexer' cs
+lexer' ('d':cs) = LT.mkTok "d" TokenBd : lexer' cs
+lexer' ('D':cs) = LT.mkTok "D" TokenBD : lexer' cs
+lexer' ('c':cs) = LT.mkTok "c" TokenC  : lexer' cs
 lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
-lexNum cs = mkTok (TokenInt (read num)) : lexer' rest
-      where (num,rest) = span isDigit cs
 
 -- Main entry point. "calc" is the parser entry point generated above
 /* main = getContents >>= print . calc . lexer */

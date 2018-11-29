@@ -2,7 +2,7 @@ module LexerSpec (main, spec) where
 
 import           Test.Hspec
 import           Language.Incremental.Lexer
-import           Language.Incremental.LexerTypes
+import           Language.Incremental.LexerTypes hiding (mkTok)
 
 -- ---------------------------------------------------------------------
 
@@ -38,9 +38,9 @@ spec = do
 
 -- ---------------------------------------------------------------------
 
-mkTok :: String -> Token String
+mkTok :: String -> TokenL String
 mkTok str
-  = Tok
+  = TokL
       { tokType      = T str
       , tokLexeme    = str
       , tokState     = 0
@@ -51,5 +51,5 @@ mkTok str
 
 -- ---------------------------------------------------------------------
 
-addSentinels :: [Token s] -> [Token s]
+addSentinels :: [TokenL s] -> [TokenL s]
 addSentinels ts = bosToken : ts ++ [eosToken]

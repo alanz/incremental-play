@@ -9,5 +9,6 @@ module Language.Incremental.ParserTypes
   , Val(..)
   ) where
 
-import Repetitive2
+-- ---------------------------------------------------------------------
 
+import Repetitive2

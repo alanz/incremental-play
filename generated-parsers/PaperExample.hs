@@ -7,6 +7,8 @@
 {-# LANGUAGE CPP,MagicHash #-}
 module PaperExample where
 
+import Language.Incremental.LexerTypes
+
 import Control.Monad
 import Data.List
 -- -----------------------------------------------------------------------------
@@ -164,11 +166,12 @@ alex_actions = array (0 :: Int, 18)
   , (0,alex_action_15)
   ]
 
-{-# LINE 102 "parsers/PaperExample.x" #-}
+{-# LINE 104 "parsers/PaperExample.x" #-}
 
 
 -- -----------------------------------------------------------------------------
 
+  {-
 -- The token type
 data Token t
   = Tok
@@ -180,6 +183,7 @@ data Token t
     }
 instance (Show t) => Show (Token t) where
   show (Tok t s st la lb) = intercalate " " ["Tok",show t,show s,show st,show la,show lb]
+-}
 
 data TokenType
   = CMNT
@@ -201,7 +205,6 @@ alexEOF = return (Tok EOF "" 0 0 0)
 -- mkToken :: TokenType -> AlexInput -> Int -> Alex Token
 -- mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)
 
--- mkToken :: TokenType -> AlexInput -> Int -> Alex (Token TokenType)
 mkToken ::(Show t) => t -> AlexInput -> Int -> Alex (Token t)
 mkToken t = \(_,la,_,_,s) n -> do
   let tok = (Tok t (take n s) (-1) la (-1))
@@ -236,7 +239,6 @@ lexTokenStream buf
         _   -> liftM (ltok { tokState = sc, tokLookAhead = la } :) go
 
 eg = putStr $ lexShow "\n /* check for debugging */ # if(DEBUG==1)"
-pp s = putStr $ lexShow s
 
 main = do
   print . runAlex "/* baz */" $ alexMonadScan

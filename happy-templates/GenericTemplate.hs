@@ -311,9 +311,9 @@ isFragile (Node v _) = grammarFragile v || leftFragile v || rightFragile v
 --   = InputToken Token
 --   | InputTree a
 
-data Tok = Tok FAST_INT Token
-  deriving Show
-instance Pretty Tok
+-- data Tok = Tok FAST_INT Token
+--   deriving Show
+-- instance Pretty Tok
 
 -- type HappyInput = Node HappyAbsSynType Tok
 

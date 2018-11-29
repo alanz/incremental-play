@@ -29,3 +29,5 @@
 dist-newstyle
 /parsers/PaperExample.info
 /alex-templates/AlexTemplate-ghc-debug
+/Repetitive3.info
+/cabal.project.local~

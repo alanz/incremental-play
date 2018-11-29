@@ -23,6 +23,7 @@ library
                        Language.Incremental.Versioned
                        Language.Incremental.Versioning
   other-modules:       Repetitive2
+                       Repetitive3
   build-depends:       base >=4.9 && <4.13
                      , ansi-wl-pprint
                      , array

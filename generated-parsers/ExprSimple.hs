@@ -38,6 +38,10 @@ data HappyAbsSyn t4 t5 t6 t7 t8 t9 t10
 
 	deriving Show
 
+
+data Tok = Tok Happy_GHC_Exts.Int# (Token)
+  deriving Show
+instance Pretty Tok
 happyExpList :: HappyAddr
 happyExpList = HappyA# "\x18\x00\x10\x00\xc0\x07\x00\x00\x20\x00\x00\x18\x00\x60\x00\x00\x00\x00\x00\x06\x00\x06\x00\x07\x00\x07\x00\x00\x00\x60\x00\x60\x00\x00\x00\x00\x00\x00"#
 
@@ -341,7 +345,7 @@ lexNum cs = mkTok (TokenInt (read num)) : lexer' rest
 
 
 {-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/home/alanz/.stack/programs/x86_64-linux/ghc-8.4.3/lib/ghc-8.4.3/include/ghcversion.h" #-}
+{-# LINE 1 "/home/alanz/.stack/programs/x86_64-linux/ghc-tinfo6-8.6.2/lib/ghc-8.6.2/include/ghcversion.h" #-}
 
 
 
@@ -358,7 +362,139 @@ lexNum cs = mkTok (TokenInt (read num)) : lexer' rest
 
 
 {-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/tmp/ghc1167_0/ghc_2.h" #-}
+{-# LINE 1 "/tmp/ghc19700_0/ghc_2.h" #-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -675,9 +811,9 @@ isFragile (Node v _) = grammarFragile v || leftFragile v || rightFragile v
 --   = InputToken Token
 --   | InputTree a
 
-data Tok = Tok Happy_GHC_Exts.Int# Token
-  deriving Show
-instance Pretty Tok
+-- data Tok = Tok Happy_GHC_Exts.Int# Token
+--   deriving Show
+-- instance Pretty Tok
 
 -- type HappyInput = Node HappyAbsSynType Tok
 
