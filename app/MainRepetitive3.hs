@@ -50,63 +50,66 @@ foo =
   (Times (Int 2) (Int 3)))
 -}
 -- newTree :: Tree NodeVal
-newTree =
-    zipperTree
-               & downward root & focus %~ setChangedChild & upward
+newTree = ptree
+-- newTree =
+--     zipperTree
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               & tugs rightward 1 -- HappyAbsSyn7
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                & tugs rightward 1 -- HappyAbsSyn7
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               & tugs rightward 1
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                & tugs rightward 1
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               & tugs rightward 1
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                & tugs rightward 1
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               & tugs rightward 1
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                & tugs rightward 1
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               & tugs rightward 1
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                & tugs rightward 1
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               -- & tugs rightward 1
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                -- & tugs rightward 1
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               -- & tugs rightward 1
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                -- & tugs rightward 1
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward branches
-               & fromWithin traverse
-               -- & tugs rightward 1
-               & downward root & focus %~ setChangedChild & upward
+--                & downward branches
+--                & fromWithin traverse
+--                -- & tugs rightward 1
+--                & downward root & focus %~ setChangedChild & upward
 
-               & downward root
-               -- & view focus
-               -- & focus %~ changeChild
-               & focus %~ changeVal
-               & rezip
+--                & downward root
+--                -- & view focus
+--                -- & focus %~ changeChild
+--                & focus %~ changeVal
+--                & rezip
 
 -- changeVal :: NodeVal -> NodeVal
--- changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenBU ] Nothing Nothing False False False
-changeVal _    = Val True True (HappyTerminal TokenBU) Nothing [LT.mkTok "B" TokenBU] Nothing Nothing False False False
+-- -- changeVal _ = Val True True (HappyErrorToken (-5)) Nothing [mkTok TokenBU ] Nothing Nothing False False False
+changeVal _    = Val True True (HappyTerminal (tok)) Nothing [tok] Nothing Nothing False False False
+  where
+    tok = LT.mkTok "B" TokenBU
 
 changeChild (Node v cs) = Node (changeVal v) []
 

@@ -122,17 +122,19 @@ data Token
 -- lexer :: String -> [HappyInput]
 lexer str = [mkTokensNode (lexer' str)]
 
+lexer' :: String -> [Tok]
 lexer' [] = []
 lexer' (c:cs)
       | isSpace c = lexer' cs
-lexer' ('a':cs) = LT.mkTok "a" TokenA  : lexer' cs
-lexer' ('b':cs) = LT.mkTok "b" TokenBL : lexer' cs
-lexer' ('B':cs) = LT.mkTok "B" TokenBU : lexer' cs
-lexer' ('d':cs) = LT.mkTok "d" TokenBd : lexer' cs
-lexer' ('D':cs) = LT.mkTok "D" TokenBD : lexer' cs
-lexer' ('c':cs) = LT.mkTok "c" TokenC  : lexer' cs
+lexer' ('a':cs) = mt "a" TokenA  : lexer' cs
+lexer' ('b':cs) = mt "b" TokenBL : lexer' cs
+lexer' ('B':cs) = mt "B" TokenBU : lexer' cs
+lexer' ('d':cs) = mt "d" TokenBd : lexer' cs
+lexer' ('D':cs) = mt "D" TokenBD : lexer' cs
+lexer' ('c':cs) = mt "c" TokenC  : lexer' cs
 lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
+mt s t = mkTok (LT.mkTok s t)
 
 -- Main entry point. "calc" is the parser entry point generated above
 /* main = getContents >>= print . calc . lexer */

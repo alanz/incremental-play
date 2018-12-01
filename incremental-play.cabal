@@ -51,11 +51,14 @@ library
   default-language:    Haskell2010
 
 executable incremental-play
-  main-is:                Main.hs
+  -- main-is:                Main.hs
+  main-is:                MainRepetitive3.hs
   -- Other-Modules:          Paths_HaRe
+  -- other-modules:          Repetitive3
   ghc-options:            -Wall
   hs-source-dirs:
     ./app
+    ./generated-parsers
   build-depends:       base >= 4.9  && < 4.13
                      , array
                      , containers
@@ -84,6 +87,7 @@ test-suite spec
                        Language.Incremental.Versioned
                        LexerSpec
                        VersionedSpec
+                       -- Repetitive3
   build-depends:       base        >= 4.9  && < 4.13
                      , ListZipper
                      , ansi-wl-pprint
