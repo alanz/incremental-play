@@ -39,15 +39,14 @@ Load `app/Main.hs` into ghci and run it
 First run `stack install`
 
 ```elisp
-(package-install 'lsp-mode)
-(package-install 'lsp-ui)
-
-(require 'lsp-ui)
-(require 'lsp-mode)
-
 (add-to-list 'load-path "/home/alanz/mysrc/github/alanz/incremental-play/elisp")
 (require 'lsp-inc)
 
-(add-hook 'inc-mode-hook #'lsp-inc-enable)
-(add-hook 'inc-mode-hook 'flycheck-mode)
+(add-hook 'inc-mode-hook 'lsp)
+(add-hook 'text-mode-hook 'lsp)
 ```
+
+Then open a file with .inc extension, run
+
+    M-x text-mode
+    M-x lsp-ui-imenu

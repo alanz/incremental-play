@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP,MagicHash #-}
-
+{-# LINE 1 "parsers/BasicLexer.x" #-}
 
 -- Top level Haskell stuff copied to output file
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
@@ -124,7 +124,7 @@ alex_actions = array (0 :: Int, 9)
   , (0,alex_action_8)
   ]
 
-
+{-# LINE 90 "parsers/BasicLexer.x" #-}
 
 
 -- -----------------------------------------------------------------------------
@@ -176,7 +176,6 @@ lexer cont = do
   la <- alexGetLookAhead
   alexSetLookAhead 0
   cont (ltok { tokState = sc, tokLookAhead = la })
-
 
 lexShow :: String -> String
 lexShow s = case lexTokenStream s of
@@ -423,7 +422,14 @@ alex_action_5 =  mkToken TokenBd
 alex_action_6 =  mkToken TokenBD 
 alex_action_7 =  mkToken TokenC  
 alex_action_8 =  mkToken ERROR_TOKEN 
+{-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
+{-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
+{-# LINE 1 "<built-in>" #-}
+{-# LINE 1 "<command-line>" #-}
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "/usr/include/stdc-predef.h" #-}
 
+{-# LINE 17 "/usr/include/stdc-predef.h" #-}
 
 
 
@@ -470,6 +476,8 @@ alex_action_8 =  mkToken ERROR_TOKEN
 
 
 
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "/home/alanz/.stack/programs/x86_64-linux/ghc-tinfo6-8.4.4/lib/ghc-8.4.4/include/ghcversion.h" #-}
 
 
 
@@ -485,6 +493,8 @@ alex_action_8 =  mkToken ERROR_TOKEN
 
 
 
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "/tmp/ghc15490_0/ghc_2.h" #-}
 
 
 
@@ -665,19 +675,8 @@ alex_action_8 =  mkToken ERROR_TOKEN
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+{-# LINE 11 "<command-line>" #-}
+{-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
 --
@@ -687,7 +686,7 @@ alex_action_8 =  mkToken ERROR_TOKEN
 -- -----------------------------------------------------------------------------
 -- INTERNALS and main scanner engine
 
-
+{-# LINE 21 "alex-templates/GenericTemplate.hs" #-}
 
 
 
@@ -701,7 +700,7 @@ alex_action_8 =  mkToken ERROR_TOKEN
 #define GTE(n,m) (n >=# m)
 #define EQ(n,m) (n ==# m)
 #endif
-
+{-# LINE 51 "alex-templates/GenericTemplate.hs" #-}
 
 
 data AlexAddr = AlexA# Addr#

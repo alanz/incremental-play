@@ -37,6 +37,8 @@ ptree = (calc . mylexer) "a BbDd c"
 -- ptree = (calc . lexerOrig) "a BbDd c"
 
 -- mylexer :: String -> [Tree (Val _ Tok)]
+mylexer :: String
+             -> [Node (HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13) Tok]
 mylexer s = [mkTokensNode toks]
   where
     toks = lll s
