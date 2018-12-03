@@ -1,9 +1,19 @@
-all: repetitive2 repetitive3 repetitive precedence simple lexer
+all: repetitive2 repetitive3 repetitive precedence simple lexer basiclexer
 
 # HAPPY= cabal new-run happy:happy --
 # HAPPY=./dist-newstyle/build/x86_64-linux/ghc-8.4.3/happy-1.20.0/build/happy/happy
 HAPPY=happy-az
 ALEX=alex
+
+#-- ------------------------------------------
+
+basiclexer : parsers/BasicLexer.x templates
+	$(ALEX) --ghc --debug \
+    --template=./alex-templates \
+    -o generated-parsers/BasicLexer.hs \
+    parsers/BasicLexer.x
+
+    # --info \
 
 #-- ------------------------------------------
 

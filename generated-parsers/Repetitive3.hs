@@ -14,6 +14,7 @@ import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal
 import Language.Incremental.LexerTypes ( TokWrapper(..), TokenL(..) )
 import qualified Language.Incremental.LexerTypes as LT
+import BasicLexer
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import qualified GHC.Exts as Happy_GHC_Exts
@@ -28,7 +29,7 @@ import Control.Monad (ap)
 -- using template file ./happy-templates/IncrementalTemplate-ghc-debug
 
 data HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13
-	= HappyTerminal (TokenL Token)
+	= HappyTerminal (TokenL TokenType)
 	| HappyErrorToken Int
 	| HappyAbsSyn4 t4
 	| HappyAbsSyn5 t5
@@ -44,7 +45,7 @@ data HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13
 	deriving Show
 
 
-data Tok = Tok Happy_GHC_Exts.Int# (TokenL Token)
+data Tok = Tok Happy_GHC_Exts.Int# (TokenL TokenType)
   deriving Show
 instance Pretty Tok
 happyExpList :: HappyAddr
@@ -289,21 +290,20 @@ data Root = Root [B]
 data B = BL | BU | Bd | BD
      deriving Show
 
-data Token
-      = TokenA
-      | TokenBL
-      | TokenBU
-      | TokenBd
-      | TokenBD
-      | TokenC
- deriving Show
+/* data Token */
+/*       = TokenA */
+/*       | TokenBL */
+/*       | TokenBU */
+/*       | TokenBd */
+/*       | TokenBD */
+/*       | TokenC */
+/*  deriving Show */
 
 
 
 -- lexer :: String -> [HappyInput]
-lexer str = [mkTokensNode (lexer' str)]
+lexerOrig str = [mkTokensNode (lexer' str)]
 
--- lexer' :: String -> [TokenL Token]
 lexer' :: String -> [Tok]
 lexer' [] = []
 lexer' (c:cs)

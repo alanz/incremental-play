@@ -1,11 +1,8 @@
--- Example adapted from p40 of
--- https://www2.eecs.berkeley.edu/Pubs/TechRpts/1997/CSD-97-946.pdf
-
 {
 -- Top level Haskell stuff copied to output file
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP,MagicHash #-}
-module PaperExample where
+module BasicLexer where
 
 import Language.Incremental.LexerTypes
 
@@ -45,6 +42,8 @@ import GHC.Exts
 import GlaExts
 #endif
 
+import qualified Language.Incremental.LexerTypes as LT
+
 }
 
 -- -----------------------------------------------------------------------------
@@ -71,31 +70,18 @@ $notnl          = . # \n
 Example :-
 
 -- match in all contexts
-@comment            { mkToken CMNT }
 @whitespace         { mkToken WS }
-\n                  { mkToken WS `andBegin` bol }
-<bol> {
- -- () /(@whitespace|@comment)*"#" { begin pp_directive }
- () /(@whitespace|"$"|@comment)*"#" { begin pp_directive }
- -- () /\$+"#" { begin pp_directive }
- ()                             { begin 0 } -- reset pp_directive
-}
-<pp_directive> {
- "$"                            { mkToken ERROR_TOKEN }
- "#"                            { mkToken PND }
- "if"                           { mkToken PP_IF }
- ()                             { begin 0 } -- reset pp_directive
-}
-<0> {
-  "#"                 { mkToken PND }
-  "("                 { mkToken LP }
-  @ident              { mkToken IDENT }
-  "=="                { mkToken EQEQ }
-  @intconst           { mkToken INTCONST }
-  ")"                 { mkToken RP }
-  }
+\n                  { mkToken WS }
+
+"a"      { mkToken TokenA  }
+"b"      { mkToken TokenBL }
+"B"      { mkToken TokenBU }
+"d"      { mkToken TokenBd }
+"D"      { mkToken TokenBD }
+"c"      { mkToken TokenC  }
+
 -- Collect contiguous, otherwise-unmatched text into an error token.
-<0> .                   { mkToken ERROR_TOKEN }
+.        { mkToken ERROR_TOKEN }
 
 
 -- -----------------------------------------------------------------------------
@@ -120,18 +106,19 @@ instance (Show t) => Show (Token t) where
 -}
 
 data TokenType
-  = CMNT
-  | WS
-  | PP_IF
-  | PND
-  | LP
-  | IDENT
-  | EQEQ
-  | INTCONST
-  | RP
-  | ERROR_TOKEN
-  | EOF
-  deriving Show
+      = TokenA
+      | TokenBL
+      | TokenBU
+      | TokenBd
+      | TokenBD
+      | TokenC
+      -- "standard" tokens
+      | WS
+      | ERROR_TOKEN
+      | EOF
+ deriving Show
+
+/* mt s t = mkTok (LT.mkTok s t) */
 
 -- alexEOF = return [EOF]
 alexEOF = return (TokL (T EOF) "" 0 0 0 True)
@@ -143,6 +130,14 @@ mkToken ::(Show t) => t -> AlexInput -> Int -> Alex (TokenL t)
 mkToken t = \(_,la,_,_,s) n -> do
   let tok = (TokL (T t) (take n s) (-1) la (-1) True)
   return $ trace ("mkToken:tok=" ++ show tok) tok
+
+lexer :: (TokenL TokenType -> Alex a) -> Alex a
+lexer cont = do
+  ltok <- alexMonadScan
+  sc <- alexGetStartCode
+  la <- alexGetLookAhead
+  alexSetLookAhead 0
+  cont (ltok { tokState = sc, tokLookAhead = la })
 
 lexShow :: String -> String
 lexShow s = case lexTokenStream s of
@@ -161,7 +156,7 @@ lexTokenStream buf
                         alex_inp = buf,
                         alex_chr = '\n',
                         alex_bytes = [],
-                        alex_scd = pp_directive})
+                        alex_scd = 0 })
     go :: Alex [TokenL TokenType]
     go = do
       ltok <- alexMonadScan
@@ -172,21 +167,18 @@ lexTokenStream buf
         T EOF -> return []
         _     -> liftM (ltok { tokState = sc, tokLookAhead = la } :) go
 
-eg = putStr $ lexShow "\n /* check for debugging */ # if(DEBUG==1)"
+eg = putStr $ lexShow "\n abcdDB"
 
 main = do
-  print . runAlex "/* baz */" $ alexMonadScan
   print . runAlex "\t" $ alexMonadScan
   print . runAlex " " $ alexMonadScan
-  print . runAlex "#if" $ alexMonadScan
-  print . runAlex "/* comment */#if" $ alexMonadScan
-  print . runAlex " /* comment */#if" $ alexMonadScan
-  print . runAlex "#" $ alexMonadScan
-  print . runAlex "(" $ alexMonadScan
-  print . runAlex "foo" $ alexMonadScan
-  print . runAlex "==" $ alexMonadScan
-  print . runAlex "123" $ alexMonadScan
-  print . runAlex ")" $ alexMonadScan
+  print . runAlex "a" $ alexMonadScan
+  print . runAlex "b" $ alexMonadScan
+  print . runAlex "B" $ alexMonadScan
+  print . runAlex "d" $ alexMonadScan
+  print . runAlex "D" $ alexMonadScan
+  print . runAlex "c" $ alexMonadScan
+  print . runAlex "j" $ alexMonadScan
 
 -- -----------------------------------------------------------------------------
 -- Alex wrapper code.

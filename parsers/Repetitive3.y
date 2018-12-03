@@ -13,13 +13,22 @@ import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Terminal
 import Language.Incremental.LexerTypes ( TokWrapper(..), TokenL(..) )
 import qualified Language.Incremental.LexerTypes as LT
+import BasicLexer
 
 }
 
 %name calc
-%tokentype { TokenL Token }
+%tokentype { TokenL TokenType }
 %error { parseError }
 
+-- %monad { P } { >>= } { return }
+-- %lexer { lexer } { TokL { tokType = T EOF } }
+
+
+
+-- The token section is a mapping from the shorthand we will use in this grammar
+-- description to the token stracture provided by the lexer. The bit on the
+-- right needs to make sense as a match clause in a haskell case statement.
 %token
       'a'             { TokL { tokType = T TokenA  } }
       'b'             { TokL { tokType = T TokenBL } }
@@ -108,19 +117,19 @@ data Root = Root [B]
 data B = BL | BU | Bd | BD
      deriving Show
 
-data Token
-      = TokenA
-      | TokenBL
-      | TokenBU
-      | TokenBd
-      | TokenBD
-      | TokenC
- deriving Show
+/* data Token */
+/*       = TokenA */
+/*       | TokenBL */
+/*       | TokenBU */
+/*       | TokenBd */
+/*       | TokenBD */
+/*       | TokenC */
+/*  deriving Show */
 
 
 
 -- lexer :: String -> [HappyInput]
-lexer str = [mkTokensNode (lexer' str)]
+lexerOrig str = [mkTokensNode (lexer' str)]
 
 lexer' :: String -> [Tok]
 lexer' [] = []

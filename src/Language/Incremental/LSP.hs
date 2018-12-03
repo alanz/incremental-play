@@ -32,7 +32,7 @@ import qualified Language.Haskell.LSP.Types.Lens as LSP
 import qualified Language.Haskell.LSP.Utility as LSP
 import           Language.Incremental.Visualise
 import           Options.Applicative
-import           Repetitive2
+import           Repetitive3
 import           System.Exit
 import qualified System.Log.Logger as L
 import           System.Posix.Process

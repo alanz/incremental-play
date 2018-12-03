@@ -200,14 +200,14 @@ data TokenType
   deriving Show
 
 -- alexEOF = return [EOF]
-alexEOF = return (Tok EOF "" 0 0 0)
+alexEOF = return (TokL (T EOF) "" 0 0 0 True)
 
 -- mkToken :: TokenType -> AlexInput -> Int -> Alex Token
 -- mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)
 
-mkToken ::(Show t) => t -> AlexInput -> Int -> Alex (Token t)
+mkToken ::(Show t) => t -> AlexInput -> Int -> Alex (TokenL t)
 mkToken t = \(_,la,_,_,s) n -> do
-  let tok = (Tok t (take n s) (-1) la (-1))
+  let tok = (TokL (T t) (take n s) (-1) la (-1) True)
   return $ trace ("mkToken:tok=" ++ show tok) tok
 
 lexShow :: String -> String
@@ -215,7 +215,7 @@ lexShow s = case lexTokenStream s of
   Left err -> err
   Right toks -> unlines $ map show toks
 
-lexTokenStream :: String -> Either String [Token TokenType]
+lexTokenStream :: String -> Either String [TokenL TokenType]
 lexTokenStream buf
   = case unAlex go initState of
       Left str -> Left str
@@ -228,15 +228,15 @@ lexTokenStream buf
                         alex_chr = '\n',
                         alex_bytes = [],
                         alex_scd = pp_directive})
-    go :: Alex [Token TokenType]
+    go :: Alex [TokenL TokenType]
     go = do
       ltok <- alexMonadScan
       sc <- alexGetStartCode
       la <- alexGetLookAhead
       alexSetLookAhead 0
       case tokType ltok of
-        EOF -> return []
-        _   -> liftM (ltok { tokState = sc, tokLookAhead = la } :) go
+        T EOF -> return []
+        _     -> liftM (ltok { tokState = sc, tokLookAhead = la } :) go
 
 eg = putStr $ lexShow "\n /* check for debugging */ # if(DEBUG==1)"
 
