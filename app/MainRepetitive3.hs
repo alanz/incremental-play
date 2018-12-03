@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 import           Repetitive3
+import           BasicLexer hiding (main)
 
 import           Control.Lens
 import           Control.Zipper
@@ -32,7 +33,28 @@ main = do
   return ()
 
 -- ptree :: HappyInput
-ptree = (calc . lexer) "a BbDd c"
+ptree = (calc . mylexer) "a BbDd c"
+-- ptree = (calc . lexerOrig) "a BbDd c"
+
+-- mylexer :: String -> [Tree (Val _ Tok)]
+mylexer s = [mkTokensNode toks]
+  where
+    toks = lll s
+
+lll :: String -> [Tok]
+lll s =
+  case runAlex s (lexer cc) of
+    Left err -> error err
+    Right v  -> v
+  where
+    cc :: LT.TokenL TokenType -> Alex [Tok]
+    cc ltok = case LT.tokType ltok of
+      LT.T EOF -> return []
+      LT.T WS  -> lexer cc
+      _        -> (mkTok ltok :) <$> lexer cc
+
+-- lexer :: (TokenL TokenType -> Alex a) -> Alex a
+-- data Tok = Tok Happy_GHC_Exts.Int# (TokenL TokenType)
 
 -- zipperTree :: Top :>> HappyInput
 zipperTree = zipper ptree
