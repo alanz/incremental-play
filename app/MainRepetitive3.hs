@@ -19,13 +19,13 @@ main = do
   -- putDoc $ pretty is
   putStr $ drawTree $ fmap show ptree
 
-  putStrLn "--------------------------------"
-  putStr $ drawTree $ fmap show newTree
-  putStrLn "--------------------------------"
+  -- putStrLn "--------------------------------"
+  -- putStr $ drawTree $ fmap show newTree
+  -- putStrLn "--------------------------------"
 
-  let p' = calc [newTree]
-  -- let p' = calc [ptree]
-  putStr $ drawTree $ fmap show p'
+  -- let p' = calc [newTree]
+  -- -- let p' = calc [ptree]
+  -- putStr $ drawTree $ fmap show p'
   putStrLn "--------------------------------"
   -- putStr $ drawTree $ fmap show $ posify $ fmap toBar ptree
   putStr $ drawTree $ fmap show $ pp $ fmap toBar ptree
@@ -33,27 +33,27 @@ main = do
   return ()
 
 -- ptree :: HappyInput
-ptree = (calc . mylexer) "a BbDd c"
--- ptree = (calc . lexerOrig) "a BbDd c"
+-- ptree = (calc . mylexer) "a BbDd c"
+ptree = (calc . mylexer) "a BbDdd c"
 
 -- mylexer :: String -> [Tree (Val _ Tok)]
-mylexer :: String
-             -> [Node (HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13) Tok]
-mylexer s = [mkTokensNode toks]
-  where
-    toks = lll s
+-- mylexer :: String
+--              -> [Node (HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13) Tok]
+-- mylexer s = [mkTokensNode toks]
+--   where
+--     toks = lll s
 
-lll :: String -> [Tok]
-lll s =
-  case runAlex s (lexer cc) of
-    Left err -> error err
-    Right v  -> v
-  where
-    cc :: LT.TokenL TokenType -> Alex [Tok]
-    cc ltok = case LT.tokType ltok of
-      LT.T EOF -> return []
-      LT.T WS  -> lexer cc
-      _        -> (mkTok ltok :) <$> lexer cc
+-- lll :: String -> [Tok]
+-- lll s =
+--   case runAlex s (lexer cc) of
+--     Left err -> error err
+--     Right v  -> v
+--   where
+--     cc :: LT.TokenL TokenType -> Alex [Tok]
+--     cc ltok = case LT.tokType ltok of
+--       LT.T EOF -> return []
+--       LT.T WS  -> lexer cc
+--       _        -> (mkTok ltok :) <$> lexer cc
 
 -- lexer :: (TokenL TokenType -> Alex a) -> Alex a
 -- data Tok = Tok Happy_GHC_Exts.Int# (TokenL TokenType)

@@ -47,6 +47,7 @@ library
                      , stm
                      , text
                      , unix
+                     , yi-rope
                      , zippers
 
   ghc-options:         -Wall -fwarn-tabs -fwarn-unused-imports -fwarn-missing-signatures -fwarn-name-shadowing -fwarn-incomplete-patterns

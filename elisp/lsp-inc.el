@@ -22,5 +22,11 @@
 (eval-after-load 'lsp
   '(add-to-list 'lsp-language-id-configuration '(text-mode . "inc") ))
 
+(define-derived-mode inc-mode
+  text-mode "Incremental Play"
+            "Major mode for experimenting with incremental parsing.")
+
+(add-to-list 'auto-mode-alist '("\\.inc\\'" . inc-mode))
+
 (provide 'lsp-inc)
 ;;; lsp-inc.el ends here

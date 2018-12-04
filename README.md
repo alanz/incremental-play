@@ -43,10 +43,9 @@ First run `stack install`
 (require 'lsp-inc)
 
 (add-hook 'inc-mode-hook 'lsp)
-(add-hook 'text-mode-hook 'lsp)
 ```
 
 Then open a file with .inc extension, run
 
-    M-x text-mode
+    M-x inc-mode
     M-x lsp-ui-imenu

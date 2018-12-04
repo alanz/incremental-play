@@ -4,11 +4,12 @@ module Language.Incremental.ParserTypes
     BinaryT(..)
   , Root(..)
   , B(..)
-  , Token(..)
+  -- , Token(..)
   , Tok(..)
   , Val(..)
   ) where
 
 -- ---------------------------------------------------------------------
 
-import Repetitive2
+-- import Repetitive2
+import Repetitive3

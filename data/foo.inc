@@ -1,1 +1,5 @@
-abbab
+a
+
+bBDd
+
+c

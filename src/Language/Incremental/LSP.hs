@@ -37,6 +37,12 @@ import           System.Exit
 import qualified System.Log.Logger as L
 import           System.Posix.Process
 import           System.Posix.Types
+import qualified Language.Haskell.LSP.VFS as LSP
+import qualified Yi.Rope as Yi
+
+-- ---------------------------------------------------------------------
+
+
 
 data CommandLineOptions
    = CommandLineOptions
@@ -138,17 +144,18 @@ reactor lf inp =
              liftIO $ LSP.logs $ "reactor:got Document symbol request:" ++ show req
              -- C.ClientCapabilities _ tdc _ <- asksLspFuncs LSP.Core.clientCapabilities
              let
-               syms = asHierarchy
-               -- syms = [ds]
-               ds =
-                 LSP.DocumentSymbol
-                    "sym"
-                    Nothing
-                    LSP.SkVariable
-                    Nothing
-                    (LSP.Range (LSP.Position 0 0) (LSP.Position 0 3))
-                    (LSP.Range (LSP.Position 0 0) (LSP.Position 0 3))
-                    Nothing
+               uri = req ^. LSP.params . LSP.textDocument . LSP.uri
+
+               vfsFunc = LSP.Core.getVirtualFileFunc lf
+
+             mf <- liftIO $ vfsFunc uri
+             txt <- case mf of
+               Nothing -> error $ "ReqDocumentSymbols: no valid file for:" ++ show uri
+               Just (LSP.VirtualFile v yitext) -> return $ Yi.toString yitext
+
+             let
+               -- syms = asHierarchy "a BbDd c"
+               syms = asHierarchy txt
              {-
   DocumentSymbol
     { _name           :: Text -- ^ The name of this symbol.
@@ -171,6 +178,24 @@ reactor lf inp =
 -}
              reactorSend $ RspDocumentSymbols
                          $ LSP.Core.makeResponseMessage req (LSP.DSDocumentSymbols (LSP.List syms))
+
+           -- --------------------------
+
+           HandlerRequest (ReqHover req) -> do
+             liftIO $ LSP.logs $ "reactor:got HoverRequest:" ++ show req
+             let params = req ^. LSP.params
+                 pos = params ^. LSP.position
+                 uri = params ^. LSP.textDocument . LSP.uri
+                 vfsFunc = LSP.Core.getVirtualFileFunc lf
+
+             mf <- liftIO $ vfsFunc uri
+             txt <- case mf of
+               Nothing -> error $ "ReqHover: no valid file for:" ++ show uri
+               Just (LSP.VirtualFile v yitext) -> return $ Yi.toString yitext
+
+             let mh = Nothing
+             reactorSend $ RspHover
+                         $ LSP.Core.makeResponseMessage req mh
 
            -- --------------------------
 
@@ -212,6 +237,7 @@ lspHandlers rin = def
    , LSP.Core.documentFormattingHandler                = Just $ passHandler ReqDocumentFormatting
    , LSP.Core.didOpenTextDocumentNotificationHandler   = Just $ passHandler NotDidOpenTextDocument
    , LSP.Core.documentSymbolHandler                    = Just $ passHandler ReqDocumentSymbols
+   , LSP.Core.hoverHandler                             = Just $ passHandler ReqHover
 
 
    }

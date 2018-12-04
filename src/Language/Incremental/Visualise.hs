@@ -13,7 +13,8 @@ import qualified Language.Haskell.LSP.Types      as LSP
 import           Language.Incremental.ParserTypes
 
 import qualified Data.Text as T
-import           Repetitive2
+-- import           Repetitive2
+import           Repetitive3
 
 -- ---------------------------------------------------------------------
 
@@ -28,8 +29,8 @@ data Span = Span Int Int
 
 -- ---------------------------------------------------------------------
 
-asHierarchy :: [LSP.DocumentSymbol]
-asHierarchy = toHierarchy bla
+asHierarchy :: String -> [LSP.DocumentSymbol]
+asHierarchy s = toHierarchy (bla s)
 
 -- ---------------------------------------------------------------------
 
@@ -57,11 +58,18 @@ mkDs label (Span s e) children =
 
 -- ---------------------------------------------------------------------
 
-bla :: Tree Bar
-bla = pp $ fmap toBar ptree
+-- bla :: String -> Tree Bar
+bla s = pp $ fmap toBar (parse s)
 
 -- Test stuff
-ptree = (calc . lexer) "a BbDd c"
+-- ptree = (calc . lexer) "a BbDd c"
+ptree = parse "a BbDd c"
+
+parse :: String
+           -> Tree
+                (Val
+                   (HappyAbsSyn Root () () Root Root () [B] B () (BinaryT B)) Tok)
+parse s = (calc . mylexer) s
 
 -- ---------------------------------------------------------------------
 
