@@ -12,4 +12,5 @@ module Language.Incremental.ParserTypes
 -- ---------------------------------------------------------------------
 
 -- import Repetitive2
-import Repetitive3
+-- import Repetitive3
+import Whitespace1

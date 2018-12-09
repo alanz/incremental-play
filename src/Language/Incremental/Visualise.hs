@@ -2,30 +2,43 @@ module Language.Incremental.Visualise
  (
    Bar(..)
  , Span(..)
+ , Pos(..)
  , convert
  , asHierarchy
  ) where
 
-import           Data.Tree
-import qualified Language.Haskell.LSP.Types      as LSP
--- import qualified Language.Haskell.LSP.Types.Lens as LSP
--- import qualified Language.Haskell.LSP.Utility    as LSP
-import           Language.Incremental.ParserTypes
-
+import           Data.List
 import qualified Data.Text as T
--- import           Repetitive2
-import           Repetitive3
+import           Data.Tree
+import qualified Language.Haskell.LSP.Types as LSP
+import           Language.Incremental.LexerTypes
+import           Language.Incremental.ParserTypes
+-- import           Repetitive3
+import           Whitespace1
 
 -- ---------------------------------------------------------------------
 
-data Bar = Bar { bLabel :: String
-               , bToks :: [Tok]
-               , bLength :: Int
-               , bSpan :: Span
-               } deriving Show
+data Bar = Bar { bLabel  :: String -- ^ Of the Constructor for this node
+               , bToks   :: [Tok]  -- ^ The tokens parsed to get this
+               , bLength :: Int    -- ^ Length in tokens?
+               , bSpan   :: Span   -- ^ Area the tokens cover, including embedded newlines
+               }
+instance Show Bar where
+  show (Bar label toks len sp)
+    = parens $ unwords ["Bar", show label, show toks, show len, show sp]
 
-data Span = Span Int Int
-            deriving Show
+data Span = Span Pos Pos
+
+instance Show Span where
+  show (Span f t) = parens $ unwords ["Span",show f,show t]
+
+data Pos = Pos { line :: Int
+               , col :: Int
+               }
+instance Show Pos where
+  show (Pos f t) = parens $ unwords ["Pos",show f,show t]
+
+parens str = "(" ++ str ++ ")"
 
 -- ---------------------------------------------------------------------
 
@@ -44,7 +57,7 @@ mkDs :: String
           -> Span
           -> Maybe (LSP.List LSP.DocumentSymbol)
           -> LSP.DocumentSymbol
-mkDs label (Span s e) children =
+mkDs label (Span (Pos sl sc) (Pos el ec)) children =
                  LSP.DocumentSymbol
                     (T.pack label)
                     Nothing
@@ -54,21 +67,21 @@ mkDs label (Span s e) children =
                     sp
                     children
   where
-    sp = LSP.Range (LSP.Position 0 s) (LSP.Position 0 e)
+    sp = LSP.Range (LSP.Position sl sc) (LSP.Position el ec)
 
 -- ---------------------------------------------------------------------
 
--- bla :: String -> Tree Bar
+bla :: String -> Tree Bar
 bla s = pp $ fmap toBar (parse s)
 
 -- Test stuff
 -- ptree = (calc . lexer) "a BbDd c"
 ptree = parse "a BbDd c"
 
-parse :: String
-           -> Tree
-                (Val
-                   (HappyAbsSyn Root () () Root Root () [B] B () (BinaryT B)) Tok)
+-- parse :: String
+--            -> Tree
+--                 (Val
+--                    (HappyAbsSyn Root () () Root Root () [B] B () (BinaryT B)) Tok)
 parse s = (calc . mylexer) s
 
 -- ---------------------------------------------------------------------
@@ -93,15 +106,16 @@ showConstr = fixup . head . tail . words . show
 
 -- ---------------------------------------------------------------------
 
+-- Add locations, based on the raw tokens
 pp :: Tree (String,[Tok]) -> Tree Bar
-pp t = head $ go (Span 0 0) [t]
+pp t = head $ go (Span (Pos 0 0) (Pos 0 0)) [t]
   where
     go :: Span -> [Tree (String,[Tok])] -> [Tree Bar]
     go _ [] = []
-    go sp@(Span _s e) (Node i []:tts) = Node b []:go sp' tts
+    go sp@(Span (Pos sl _s) (Pos el e)) (Node i []:tts) = Node b []:go sp' tts
       where
         b = (ff sp i) { bSpan = sp' }
-        sp' = Span e (e + bLength b)
+        sp' = Span (Pos sl e) (Pos el (e + bLength b))
     go sp (Node i ts:tts) = r:go sp' tts
       where
         b = (ff sp i) { bSpan = sp' }
@@ -113,10 +127,27 @@ pp t = head $ go (Span 0 0) [t]
         Span _ e = bSpan be
         sp' = Span s e
 
-    ff (Span _start end) (s,ts) = Bar s ts len sp
+    -- Given a starting span, advance to calculate a Span
+    -- corresponding to the given tokens
+    ff :: Span -> (String,[Tok]) -> Bar
+    ff (Span _start end@(Pos endl endc)) (s,ts) = Bar s ts len sp
       where
         len = length ts
-        sp = Span end (end + len)
+        -- sp = Span (Pos endl endc) (Pos endl (endc + len))
+        sp = Span start' end'
+        start' = Pos endl (endc+1)
+        end' = go1 end ts
+
+        go1 pos [] = pos
+        go1 pos (Tok _ t':ts') = go1 (advance pos t') ts'
+
+    -- Advance based on the lexeme text, adjusting for any newlines seen
+    advance :: Pos -> TokenL t -> Pos
+    advance pos tok = go2 pos (tokLexeme tok)
+      where
+        go2 pos' [] = pos'
+        go2 (Pos l _) ('\n':cs) = go2 (Pos (l+1) 0) cs
+        go2 (Pos l c) (_:cs) = go2 (Pos l (c+1)) cs
 
 
 -- ---------------------------------------------------------------------
