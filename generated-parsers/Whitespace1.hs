@@ -504,14 +504,7 @@ lll s =
 
 -- Main entry point. "calc" is the parser entry point generated above
 -- main = getContents >>= print . calc . lexer
-{-# LINE 1 "happy-templates/GenericTemplate.hs" #-}
-{-# LINE 1 "happy-templates/GenericTemplate.hs" #-}
-{-# LINE 1 "<built-in>" #-}
-{-# LINE 1 "<command-line>" #-}
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/usr/include/stdc-predef.h" #-}
 
-{-# LINE 17 "/usr/include/stdc-predef.h" #-}
 
 
 
@@ -558,8 +551,6 @@ lll s =
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/opt/ghc/8.6.3/lib/ghc-8.6.3/include/ghcversion.h" #-}
 
 
 
@@ -575,8 +566,6 @@ lll s =
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/tmp/ghc11937_0/ghc_2.h" #-}
 
 
 
@@ -769,11 +758,22 @@ lll s =
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "happy-templates/GenericTemplate.hs" #-}
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 
-{-# LINE 13 "happy-templates/GenericTemplate.hs" #-}
+
 
 
 
@@ -789,7 +789,7 @@ lll s =
 #define GTE(n,m) (n Happy_GHC_Exts.>=# m)
 #define EQ(n,m) (n Happy_GHC_Exts.==# m)
 #endif
-{-# LINE 46 "happy-templates/GenericTemplate.hs" #-}
+
 
 data Happy_IntList = HappyCons Happy_GHC_Exts.Int# Happy_IntList
 
@@ -799,9 +799,9 @@ data Happy_IntList = HappyCons Happy_GHC_Exts.Int# Happy_IntList
 
 
 
-{-# LINE 77 "happy-templates/GenericTemplate.hs" #-}
 
-{-# LINE 91 "happy-templates/GenericTemplate.hs" #-}
+
+
 
 
 
@@ -1048,10 +1048,11 @@ getTerminals (Node v cs) = terminals v
 --               -> HappyIdentity HappyInput
 happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk tks
   = (happyTrace ("--------------------------\n")) $
-    (happyTrace ("happyDoAction:tks=" ++ showInputQ tks ++ "\n")) $
-    (happyTrace ("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")) $
-    (happyTrace ("happyDoAction:inp=" ++ showHere v ++ "\n")) $
     (happyTrace ("happyDoAction:verifying=" ++ show verifying ++ "\n")) $
+    (happyTrace ("happyDoAction:la=" ++ show (Happy_GHC_Exts.I# (la)) ++ "\n")) $
+    (happyTrace ("happyDoAction:inp=" ++ showHere v ++ "\n")) $
+    (happyTrace ("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")) $
+    (happyTrace ("happyDoAction:tks=" ++ showInputQ tks ++ "\n")) $
     case toks of -- Terminals
       (tok@(Tok i tk):ts) ->
         (happyTrace ("t:state: " ++ show (Happy_GHC_Exts.I# (st)) ++                     ",\tfragile: " ++ show fragile ++                     ",\ttoken: " ++ show (Happy_GHC_Exts.I# (i)) ++                     ",\taction: ")) $
@@ -1062,8 +1063,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
               0#   -> (happyTrace ("fail.\n")) $
                            if verifying == Verifying
                              then rightBreakdown st sts stk tks
-                             -- else happyFail (happyExpListPerState ((Happy_GHC_Exts.I# (st)) :: Int)) i inp st sts stk tks
-                             else happyFail (happyExpListPerState ((Happy_GHC_Exts.I# (st)) :: Int)) 0# inp st sts stk tks
+                             else happyFail (happyExpListPerState ((Happy_GHC_Exts.I# (st)) :: Int)) i inp st sts stk tks
               -1#  -> (happyTrace ("accept. A\n")) $
                              happyAccept i tk st sts stk tks
               n | LT(n,(0# :: Happy_GHC_Exts.Int#))
@@ -1241,7 +1241,7 @@ hasYield (Node (Val { last_terminal = mlt}) _) = isJust mlt
 -----------------------------------------------------------------------------
 -- Arrays only: do the next action
 
-{-# LINE 560 "happy-templates/GenericTemplate.hs" #-}
+
 
 
 indexShortOffAddr (HappyA# arr) off =
@@ -1271,7 +1271,7 @@ data HappyAddr = HappyA# Happy_GHC_Exts.Addr#
 -----------------------------------------------------------------------------
 -- HappyState data type (not arrays)
 
-{-# LINE 600 "happy-templates/GenericTemplate.hs" #-}
+
 
 -----------------------------------------------------------------------------
 -- Shifting a token
@@ -1426,7 +1426,7 @@ happyGoto am nt j inp st =
    where off = indexShortOffAddr happyGotoOffsets st
          off_i = (off Happy_GHC_Exts.+# nt)
          new_state = indexShortOffAddr happyTable off_i
-{-# LINE 764 "happy-templates/GenericTemplate.hs" #-}
+
 
 -----------------------------------------------------------------------------
 -- Error recovery (0# is the error token)
@@ -1458,10 +1458,15 @@ happyFail  0# tk old_st (HappyCons ((action)) (sts))
 
 -- Enter error recovery: generate an error token,
 --                       save the old token and carry on.
-happyFail explist i inp (action) sts stk =
+happyFail explist i inp@(Node v@(Val {terminals = toks}) cs) (action) sts stk =
+  let
+          inp1 = case toks of
+            [] -> inp
+            (Tok _ t:ts) -> Node v {terminals = Tok 0# t : ts} cs
+  in
      (happyTrace ( "happyFail:entering error recovery\n")) $
    -- TODO:AZ: restore the error processing
-        happyDoAction NotVerifying ((0#)) inp action sts ((mkNode (HappyErrorToken (Happy_GHC_Exts.I# (i))) Nothing False [] ) `HappyStk` stk)
+        happyDoAction NotVerifying ((0#)) inp1 action sts ((mkNode (HappyErrorToken (Happy_GHC_Exts.I# (i))) Nothing False [] ) `HappyStk` stk)
         -- happyDoAction verifying    i                     inp new_state (HappyCons (st) (sts)) ( stk)
         -- happyError_ explist i inp
 

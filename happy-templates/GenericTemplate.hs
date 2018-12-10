@@ -334,10 +334,11 @@ getTerminals (Node v cs) = terminals v
 --               -> HappyIdentity HappyInput
 happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk tks
   = DEBUG_TRACE("--------------------------\n")
-    DEBUG_TRACE("happyDoAction:tks=" ++ showInputQ tks ++ "\n")
-    DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
-    DEBUG_TRACE("happyDoAction:inp=" ++ showHere v ++ "\n")
     DEBUG_TRACE("happyDoAction:verifying=" ++ show verifying ++ "\n")
+    DEBUG_TRACE("happyDoAction:la=" ++ show IBOX(la) ++ "\n")
+    DEBUG_TRACE("happyDoAction:inp=" ++ showHere v ++ "\n")
+    DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
+    DEBUG_TRACE("happyDoAction:tks=" ++ showInputQ tks ++ "\n")
     case toks of -- Terminals
       (tok@(Tok i tk):ts) ->
         DEBUG_TRACE("t:state: " ++ show IBOX(st) ++
@@ -348,8 +349,7 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
               ILIT(0)   -> DEBUG_TRACE("fail.\n")
                            if verifying == Verifying
                              then rightBreakdown st sts stk tks
-                             -- else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk tks
-                             else happyFail (happyExpListPerState (IBOX(st) :: Int)) ERROR_TOK inp st sts stk tks
+                             else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk tks
               ILIT(-1)  -> DEBUG_TRACE("accept. A\n")
                              happyAccept i tk st sts stk tks
               n | LT(n,(ILIT(0) :: FAST_INT))
@@ -792,10 +792,15 @@ happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts)
 
 -- Enter error recovery: generate an error token,
 --                       save the old token and carry on.
-happyFail explist i inp HAPPYSTATE(action) sts stk =
+happyFail explist i inp@(Node v@(Val {terminals = toks}) cs) HAPPYSTATE(action) sts stk =
+  let
+          inp1 = case toks of
+            [] -> inp
+            (Tok _ t:ts) -> Node v {terminals = Tok ERROR_TOK t : ts} cs
+  in
      DEBUG_TRACE( "happyFail:entering error recovery\n")
    -- TODO:AZ: restore the error processing
-        DO_ACTION(NotVerifying,action,(TERMINAL(ERROR_TOK)),inp,sts,MK_ERROR_TOKEN(i) `HappyStk` stk)
+        DO_ACTION(NotVerifying,action,(TERMINAL(ERROR_TOK)),inp1,sts,MK_ERROR_TOKEN(i) `HappyStk` stk)
         -- DO_ACTION(verifying   ,new_state,i                    ,inp,CONS(st,sts), stk)
         -- happyError_ explist i inp
 

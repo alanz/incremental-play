@@ -60,14 +60,6 @@ import Data.Array.Base (unsafeAt)
 import Array
 #endif
 #if __GLASGOW_HASKELL__ >= 503
-import System.IO
-import System.IO.Unsafe
-import Debug.Trace
-#else
-import IO
-import IOExts
-#endif
-#if __GLASGOW_HASKELL__ >= 503
 import GHC.Exts
 #else
 import GlaExts
@@ -428,7 +420,7 @@ alex_action_8 =  mkToken ERROR_TOKEN
 {-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
 {-# LINE 1 "<built-in>" #-}
 {-# LINE 1 "<command-line>" #-}
-{-# LINE 11 "<command-line>" #-}
+{-# LINE 10 "<command-line>" #-}
 {-# LINE 1 "/usr/include/stdc-predef.h" #-}
 
 {-# LINE 17 "/usr/include/stdc-predef.h" #-}
@@ -478,8 +470,8 @@ alex_action_8 =  mkToken ERROR_TOKEN
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/home/alanz/.stack/programs/x86_64-linux/ghc-tinfo6-8.4.4/lib/ghc-8.4.4/include/ghcversion.h" #-}
+{-# LINE 10 "<command-line>" #-}
+{-# LINE 1 "/opt/ghc/8.6.3/lib/ghc-8.6.3/include/ghcversion.h" #-}
 
 
 
@@ -495,8 +487,8 @@ alex_action_8 =  mkToken ERROR_TOKEN
 
 
 
-{-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/tmp/ghc15490_0/ghc_2.h" #-}
+{-# LINE 10 "<command-line>" #-}
+{-# LINE 1 "/tmp/ghc24772_0/ghc_2.h" #-}
 
 
 
@@ -677,7 +669,19 @@ alex_action_8 =  mkToken ERROR_TOKEN
 
 
 
-{-# LINE 11 "<command-line>" #-}
+
+
+
+
+
+
+
+
+
+
+
+
+{-# LINE 10 "<command-line>" #-}
 {-# LINE 1 "alex-templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
@@ -779,24 +783,24 @@ alexScanUser user__ input__ (I# (sc))
     case alexGetByte input__ of
       Nothing ->
 
-                                   trace ("End of input.") $
+
 
                                    AlexEOF
       Just _ ->
 
-                                   trace ("Error.") $
+
 
                                    AlexError input__'
 
   (AlexLastSkip input__'' len, _) ->
 
-    trace ("Skipping.") $
+
 
     AlexSkip input__'' len
 
   (AlexLastAcc k input__''' len, _) ->
 
-    trace ("Accept.") $
+
 
     AlexToken input__''' len (alex_actions ! k)
 
@@ -814,7 +818,7 @@ alex_scan_tkn user__ orig_input len input__ s last_acc =
      Nothing -> (new_acc, input__)
      Just (c, new_input) ->
 
-      trace ("State: " ++ show (I# (s)) ++ ", char: " ++ show c) $
+
 
       case fromIntegral c of { (I# (ord_c)) ->
         let
@@ -837,7 +841,7 @@ alex_scan_tkn user__ orig_input len input__ s last_acc =
   where
         push_la (_,la,_,_,_) (p,_,c,b,s) =
 
-          trace ("************push_la:la=" ++ show la)
+
 
           (p,la,c,b,s)
 
@@ -849,7 +853,7 @@ alex_scan_tkn user__ orig_input len input__ s last_acc =
           = let
               (i',p) =
 
-                       trace ("#########in check_accs pred")
+
 
                              (predx user__ orig_input (I# (len)) input__)
             in if p
