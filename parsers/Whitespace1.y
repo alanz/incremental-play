@@ -37,6 +37,7 @@ import BasicLexer
       'D'             { TokL { tokType = T TokenBD } }
       'c'             { TokL { tokType = T TokenC  } }
       'WS'            { TokL { tokType = T WS      } }
+      'BOF'           { TokL { tokType = T BOF     } }
 
 %%
 
@@ -46,17 +47,19 @@ import BasicLexer
 
 Ultraroot : bos tree eos { $2 }
 
-bos : { () }
-eos : { () }
+bos : conn('BOF') { Conn "bos" }
+eos : { "eos" }
 
 tree : Root { $1 }
 
 -- -------------------------------------
 
-Root : A Bs C { Root $2 }
+Root : Am Bs C { Root $2 }
 
-A : 'a'           { () }
-  | {- nothing -} { () }
+Am :: { (Conn (TokenL TokenType)) }
+   : conn(A)      { $1 }
+
+A : 'a' { $1 }
 
 Bs :: { [ Conn B]}
    : listb(BWs)       { toList $1 }
@@ -158,20 +161,23 @@ data Root = Root [Conn B]
 data B = BL | BU | Bd | BD
      deriving Show
 
-/* data Token */
-/*       = TokenA */
-/*       | TokenBL */
-/*       | TokenBU */
-/*       | TokenBd */
-/*       | TokenBD */
-/*       | TokenC */
-/*  deriving Show */
+{-
+data Token
+      = TokenA
+      | TokenBL
+      | TokenBU
+      | TokenBd
+      | TokenBD
+      | TokenC
+ deriving Show
+-}
 
-/* mylexer :: String */
-/*              -> [Node (HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13) Tok] */
+{-
+mylexer :: String
+  -> [Node (HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13) Tok] -}
 mylexer s = [mkTokensNode toks]
   where
-    toks = lll s
+  toks = mkTok alexBOF : lll s
 
 lll :: String -> [Tok]
 lll s =
@@ -189,6 +195,6 @@ lll s =
 -- lexer :: String -> [HappyInput]
 
 -- Main entry point. "calc" is the parser entry point generated above
-/* main = getContents >>= print . calc . lexer */
+-- main = getContents >>= print . calc . lexer
 
 }

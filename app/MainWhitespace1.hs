@@ -35,29 +35,7 @@ main = do
 -- ptree :: HappyInput
 -- ptree = (calc . mylexer) "a BbDd c"
 -- ptree = (calc . mylexer) "a BbDdd c"
-ptree = (calc . mylexer) "aB \n \n c"
-
--- mylexer :: String -> [Tree (Val _ Tok)]
--- mylexer :: String
---              -> [Node (HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13) Tok]
--- mylexer s = [mkTokensNode toks]
---   where
---     toks = lll s
-
--- lll :: String -> [Tok]
--- lll s =
---   case runAlex s (lexer cc) of
---     Left err -> error err
---     Right v  -> v
---   where
---     cc :: LT.TokenL TokenType -> Alex [Tok]
---     cc ltok = case LT.tokType ltok of
---       LT.T EOF -> return []
---       LT.T WS  -> lexer cc
---       _        -> (mkTok ltok :) <$> lexer cc
-
--- lexer :: (TokenL TokenType -> Alex a) -> Alex a
--- data Tok = Tok Happy_GHC_Exts.Int# (TokenL TokenType)
+ptree = (calc . mylexer) " \n a B c"
 
 -- zipperTree :: Top :>> HappyInput
 zipperTree = zipper ptree

@@ -113,6 +113,7 @@ data TokenType
       | TokenBD
       | TokenC
       -- "standard" tokens
+      | BOF -- AZ addition, to facilitate front of file WS capture
       | WS
       | ERROR_TOKEN
       | EOF
@@ -122,6 +123,7 @@ data TokenType
 
 -- alexEOF = return [EOF]
 alexEOF = return (TokL (T EOF) "" 0 0 0 True)
+alexBOF = TokL (T BOF) "" 0 0 0 True
 
 -- mkToken :: TokenType -> AlexInput -> Int -> Alex Token
 -- mkToken t = \(_,la,_,_,s) n -> return (Tok t (take n s) (-1) la)

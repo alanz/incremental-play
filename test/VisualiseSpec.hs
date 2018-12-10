@@ -2,6 +2,7 @@ module VisualiseSpec (main, spec) where
 
 import qualified Data.Text as T
 import           Data.Tree
+import           Data.List
 import qualified Language.Haskell.LSP.Types as LSP
 import           Language.Incremental.Lexer
 import           Language.Incremental.LexerTypes
@@ -25,12 +26,17 @@ spec = do
   describe "Allocate Spans to tree" $ do
     it "tree trivial" $ do
       let
-        ptree = (calc . mylexer) "aB c"
+        -- str = " a\n B\n c"
+        str = "a\n\nbBDd\n\nc\n"
+        ptree = (calc . mylexer) str
         tree = convert ptree
 
       putStr $ drawTree $ fmap show tree
+      putStrLn "---------------------------------------------"
+      putStr $ intercalate "\n" $ show <$> treeToks tree
+      putStrLn "\n---------------------------------------------"
       -- show tree `shouldBe` ""
-      "a" `shouldBe` ""
+      str `shouldBe` toksAsString (treeToks tree)
 
 
     -- ---------------------------------

@@ -5,8 +5,11 @@ module Language.Incremental.Visualise
  , Pos(..)
  , convert
  , asHierarchy
+ , treeToks
+ , toksAsString
  ) where
 
+import           Data.Foldable
 import           Data.List
 import qualified Data.Text as T
 import           Data.Tree
@@ -44,6 +47,16 @@ parens str = "(" ++ str ++ ")"
 
 asHierarchy :: String -> [LSP.DocumentSymbol]
 asHierarchy s = toHierarchy (bla s)
+
+-- ---------------------------------------------------------------------
+
+treeToks :: Tree Bar -> [Tok]
+treeToks t = fold $ fmap bToks t
+
+toksAsString :: [Tok] -> String
+toksAsString ts = concatMap foo ts
+  where
+    foo (Tok _ t) = tokLexeme t
 
 -- ---------------------------------------------------------------------
 

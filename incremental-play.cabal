@@ -33,7 +33,7 @@ library
                      , containers
                      , data-default
                      , fingertree
-                     , haskell-lsp
+                     , haskell-lsp >= 0.8.0
                      , hslogger
                      , lens
                      , ListZipper
@@ -55,8 +55,8 @@ library
   default-language:    Haskell2010
 
 executable incremental-play
-  -- main-is:                Main.hs
-  main-is:                MainWhitespace1.hs
+  main-is:                Main.hs
+  -- main-is:                MainWhitespace1.hs
   -- main-is:                MainRepetitive3.hs
   -- main-is:                PaperExample.hs
   -- main-is:                BasicLexer.hs
@@ -92,7 +92,10 @@ test-suite spec
   other-modules:       Spec
                        Language.Incremental.Lexer
                        Language.Incremental.LexerTypes
+                       Language.Incremental.ParserTypes
                        Language.Incremental.Versioned
+                       Language.Incremental.Visualise
+                       BasicLexer
                        LexerSpec
                        VersionedSpec
                        VisualiseSpec

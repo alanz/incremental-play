@@ -331,7 +331,7 @@ lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
 
 {-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/home/alanz/.stack/programs/x86_64-linux/ghc-tinfo6-8.6.2/lib/ghc-8.6.2/include/ghcversion.h" #-}
+{-# LINE 1 "/opt/ghc/8.6.3/lib/ghc-8.6.3/include/ghcversion.h" #-}
 
 
 
@@ -348,7 +348,7 @@ lexer' (unk:cs) = error $ "lexer' failure on char " ++ show unk
 
 
 {-# LINE 11 "<command-line>" #-}
-{-# LINE 1 "/tmp/ghc19700_0/ghc_2.h" #-}
+{-# LINE 1 "/tmp/ghc11937_0/ghc_2.h" #-}
 
 
 
@@ -819,9 +819,11 @@ getTerminals (Node v cs) = terminals v
 --               -> [HappyInput] -- ^ Input being processed
 --               -> HappyIdentity HappyInput
 happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk tks
-  = (happyTrace ("happyDoAction:tks=" ++ showInputQ tks ++ "\n")) $
+  = (happyTrace ("--------------------------\n")) $
+    (happyTrace ("happyDoAction:tks=" ++ showInputQ tks ++ "\n")) $
     (happyTrace ("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")) $
     (happyTrace ("happyDoAction:inp=" ++ showHere v ++ "\n")) $
+    (happyTrace ("happyDoAction:verifying=" ++ show verifying ++ "\n")) $
     case toks of -- Terminals
       (tok@(Tok i tk):ts) ->
         (happyTrace ("t:state: " ++ show (Happy_GHC_Exts.I# (st)) ++                     ",\tfragile: " ++ show fragile ++                     ",\ttoken: " ++ show (Happy_GHC_Exts.I# (i)) ++                     ",\taction: ")) $
@@ -832,7 +834,8 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
               0#   -> (happyTrace ("fail.\n")) $
                            if verifying == Verifying
                              then rightBreakdown st sts stk tks
-                             else happyFail (happyExpListPerState ((Happy_GHC_Exts.I# (st)) :: Int)) i inp st sts stk tks
+                             -- else happyFail (happyExpListPerState ((Happy_GHC_Exts.I# (st)) :: Int)) i inp st sts stk tks
+                             else happyFail (happyExpListPerState ((Happy_GHC_Exts.I# (st)) :: Int)) 0# inp st sts stk tks
               -1#  -> (happyTrace ("accept. A\n")) $
                              happyAccept i tk st sts stk tks
               n | LT(n,(0# :: Happy_GHC_Exts.Int#))
@@ -1010,7 +1013,7 @@ hasYield (Node (Val { last_terminal = mlt}) _) = isJust mlt
 -----------------------------------------------------------------------------
 -- Arrays only: do the next action
 
-{-# LINE 557 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 560 "happy-templates/GenericTemplate.hs" #-}
 
 
 indexShortOffAddr (HappyA# arr) off =
@@ -1040,7 +1043,7 @@ data HappyAddr = HappyA# Happy_GHC_Exts.Addr#
 -----------------------------------------------------------------------------
 -- HappyState data type (not arrays)
 
-{-# LINE 597 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 600 "happy-templates/GenericTemplate.hs" #-}
 
 -----------------------------------------------------------------------------
 -- Shifting a token
@@ -1195,7 +1198,7 @@ happyGoto am nt j inp st =
    where off = indexShortOffAddr happyGotoOffsets st
          off_i = (off Happy_GHC_Exts.+# nt)
          new_state = indexShortOffAddr happyTable off_i
-{-# LINE 761 "happy-templates/GenericTemplate.hs" #-}
+{-# LINE 764 "happy-templates/GenericTemplate.hs" #-}
 
 -----------------------------------------------------------------------------
 -- Error recovery (0# is the error token)
@@ -1211,7 +1214,7 @@ happyGoto am nt j inp st =
 --           -> HappyIdentity HappyInput
 happyFail explist 0# inp old_st _ stk@(x `HappyStk` _) =
      let i = (case x of { Node (Val{ here = HappyErrorToken (Happy_GHC_Exts.I# (i))}) _ -> i} ) in
---      trace "failing" $
+        (happyTrace ( "happyFail:failing\n")) $
         happyError_ explist i inp
 
 {-  We don't need state discarding for our restricted implementation of
@@ -1219,7 +1222,7 @@ happyFail explist 0# inp old_st _ stk@(x `HappyStk` _) =
     for now --SDM
 
 -- discard a state
-happyFail  0# tk old_st (HappyCons ((action)) (sts)) 
+happyFail  0# tk old_st (HappyCons ((action)) (sts))
                                                 (saved_tok `HappyStk` _ `HappyStk` stk) =
 --      trace ("discarding state, depth " ++ show (length stk))  $
         happyDoAction NotVerifying 0# tk action sts ((saved_tok`HappyStk`stk))
@@ -1228,12 +1231,13 @@ happyFail  0# tk old_st (HappyCons ((action)) (sts))
 -- Enter error recovery: generate an error token,
 --                       save the old token and carry on.
 happyFail explist i inp (action) sts stk =
---      trace "entering error recovery" $
+     (happyTrace ( "happyFail:entering error recovery\n")) $
    -- TODO:AZ: restore the error processing
-        happyDoAction NotVerifying ((0#)) inp action             sts ( (mkNode (HappyErrorToken (Happy_GHC_Exts.I# (i))) Nothing False [] ) `HappyStk` stk)
+        happyDoAction NotVerifying ((0#)) inp action sts ((mkNode (HappyErrorToken (Happy_GHC_Exts.I# (i))) Nothing False [] ) `HappyStk` stk)
         -- happyDoAction verifying    i                     inp new_state (HappyCons (st) (sts)) ( stk)
         -- happyError_ explist i inp
 
+     -- = happyFail [] 0# tk st sts stk
 -- Internal happy errors:
 
 notHappyAtAll :: a
@@ -1249,7 +1253,7 @@ happyTcHack x y = y
 
 
 -----------------------------------------------------------------------------
--- Seq-ing.  If the --strict flag is given, then Happy emits 
+-- Seq-ing.  If the --strict flag is given, then Happy emits
 --      happySeq = happyDoSeq
 -- otherwise it emits
 --      happySeq = happyDontSeq

@@ -1,4 +1,4 @@
-resolver: lts-12.21
+resolver: lts-12.22
 packages:
 - .
 extra-deps:
@@ -6,4 +6,3 @@ extra-deps:
 - haskell-lsp-0.8.0.1
 - haskell-lsp-types-0.8.0.1
 - ordered-containers-0.1.1
-- rosezipper-0.2

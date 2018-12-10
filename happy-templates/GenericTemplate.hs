@@ -333,9 +333,11 @@ getTerminals (Node v cs) = terminals v
 --               -> [HappyInput] -- ^ Input being processed
 --               -> HappyIdentity HappyInput
 happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = mnext, here_nt = mnt}) cs) st sts stk tks
-  = DEBUG_TRACE("happyDoAction:tks=" ++ showInputQ tks ++ "\n")
+  = DEBUG_TRACE("--------------------------\n")
+    DEBUG_TRACE("happyDoAction:tks=" ++ showInputQ tks ++ "\n")
     DEBUG_TRACE("happyDoAction:stacks=" ++ showStacks sts stk ++ "\n")
     DEBUG_TRACE("happyDoAction:inp=" ++ showHere v ++ "\n")
+    DEBUG_TRACE("happyDoAction:verifying=" ++ show verifying ++ "\n")
     case toks of -- Terminals
       (tok@(Tok i tk):ts) ->
         DEBUG_TRACE("t:state: " ++ show IBOX(st) ++
@@ -346,7 +348,8 @@ happyDoAction verifying la inp@(Node v@(Val {terminals = toks, next_terminal = m
               ILIT(0)   -> DEBUG_TRACE("fail.\n")
                            if verifying == Verifying
                              then rightBreakdown st sts stk tks
-                             else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk tks
+                             -- else happyFail (happyExpListPerState (IBOX(st) :: Int)) i inp st sts stk tks
+                             else happyFail (happyExpListPerState (IBOX(st) :: Int)) ERROR_TOK inp st sts stk tks
               ILIT(-1)  -> DEBUG_TRACE("accept. A\n")
                              happyAccept i tk st sts stk tks
               n | LT(n,(ILIT(0) :: FAST_INT))
@@ -773,7 +776,7 @@ happyGoto action j tk st = action j j tk (HappyState action)
 --           -> HappyIdentity HappyInput
 happyFail explist ERROR_TOK inp old_st _ stk@(x `HappyStk` _) =
      let i = GET_ERROR_TOKEN(x) in
---      trace "failing" $
+        DEBUG_TRACE( "happyFail:failing\n")
         happyError_ explist i inp
 
 {-  We don't need state discarding for our restricted implementation of
@@ -781,7 +784,7 @@ happyFail explist ERROR_TOK inp old_st _ stk@(x `HappyStk` _) =
     for now --SDM
 
 -- discard a state
-happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts) 
+happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts)
                                                 (saved_tok `HappyStk` _ `HappyStk` stk) =
 --      trace ("discarding state, depth " ++ show (length stk))  $
         DO_ACTION(NotVerifying,action,ERROR_TOK,tk,sts,(saved_tok`HappyStk`stk))
@@ -790,12 +793,13 @@ happyFail  ERROR_TOK tk old_st CONS(HAPPYSTATE(action),sts)
 -- Enter error recovery: generate an error token,
 --                       save the old token and carry on.
 happyFail explist i inp HAPPYSTATE(action) sts stk =
---      trace "entering error recovery" $
+     DEBUG_TRACE( "happyFail:entering error recovery\n")
    -- TODO:AZ: restore the error processing
-        DO_ACTION(NotVerifying,action   ,(TERMINAL(ERROR_TOK)),inp,         sts, MK_ERROR_TOKEN(i) `HappyStk` stk)
+        DO_ACTION(NotVerifying,action,(TERMINAL(ERROR_TOK)),inp,sts,MK_ERROR_TOKEN(i) `HappyStk` stk)
         -- DO_ACTION(verifying   ,new_state,i                    ,inp,CONS(st,sts), stk)
         -- happyError_ explist i inp
 
+     -- = happyFail [] ERROR_TOK tk st sts stk
 -- Internal happy errors:
 
 notHappyAtAll :: a
@@ -811,7 +815,7 @@ happyTcHack x y = y
 #endif
 
 -----------------------------------------------------------------------------
--- Seq-ing.  If the --strict flag is given, then Happy emits 
+-- Seq-ing.  If the --strict flag is given, then Happy emits
 --      happySeq = happyDoSeq
 -- otherwise it emits
 --      happySeq = happyDontSeq
