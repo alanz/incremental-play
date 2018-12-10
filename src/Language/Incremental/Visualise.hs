@@ -125,10 +125,9 @@ pp t = head $ go (Span (Pos 0 0) (Pos 0 0)) [t]
   where
     go :: Span -> [Tree (String,[Tok])] -> [Tree Bar]
     go _ [] = []
-    go sp@(Span (Pos sl _s) (Pos el e)) (Node i []:tts) = Node b []:go sp' tts
+    go sp@(Span (Pos sl _s) (Pos el e)) (Node i []:tts) = Node b []:go (bSpan b) tts
       where
-        b = (ff sp i) { bSpan = sp' }
-        sp' = Span (Pos sl e) (Pos el (e + bLength b))
+        b = (ff sp i)
     go sp (Node i ts:tts) = r:go sp' tts
       where
         b = (ff sp i) { bSpan = sp' }
@@ -148,7 +147,8 @@ pp t = head $ go (Span (Pos 0 0) (Pos 0 0)) [t]
         len = length ts
         -- sp = Span (Pos endl endc) (Pos endl (endc + len))
         sp = Span start' end'
-        start' = Pos endl (endc+1)
+        -- start' = Pos endl (endc+1)
+        start' = Pos endl endc
         end' = go1 end ts
 
         go1 pos [] = pos
@@ -159,8 +159,8 @@ pp t = head $ go (Span (Pos 0 0) (Pos 0 0)) [t]
     advance pos tok = go2 pos (tokLexeme tok)
       where
         go2 pos' [] = pos'
-        go2 (Pos l _) ('\n':cs) = go2 (Pos (l+1) 0) cs
-        go2 (Pos l c) (_:cs) = go2 (Pos l (c+1)) cs
+        go2 (Pos l _) ('\n':cs) = go2 (Pos (l+1)     0) cs
+        go2 (Pos l c) (   _:cs) = go2 (Pos  l    (c+1)) cs
 
 
 -- ---------------------------------------------------------------------

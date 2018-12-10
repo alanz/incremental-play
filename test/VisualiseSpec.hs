@@ -26,9 +26,8 @@ spec = do
   describe "Allocate Spans to tree" $ do
     it "tree trivial" $ do
       let
-        -- str = " a\n B\n c"
+        str = " a\n B\n c"
         -- str = "a\n\nbBDd\n\nc\n"
-        str = "a\n\nbBDd\n\nc\n"
         ptree = (calc . mylexer) str
         tree = convert ptree
 
