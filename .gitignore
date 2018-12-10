@@ -32,3 +32,5 @@ dist-newstyle
 /Repetitive3.info
 /cabal.project.local~
 /Whitespace1.info
+/alex-templates/AlexTemplate-ghc-nopred
+*_flymake.hs
