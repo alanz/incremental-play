@@ -16,12 +16,14 @@ module Language.Incremental.LSP
 -- import qualified Data.Text as T
 import           Control.Concurrent
 import           Control.Concurrent.STM.TChan
+import qualified Control.Concurrent.STM as STM
 import qualified Control.Exception as Exception
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Monad.STM
+import qualified Data.Map as Map
 import           Data.Default
 import qualified Language.Haskell.LSP.Control as LSP.Control
 import qualified Language.Haskell.LSP.Core as LSP.Core
@@ -32,7 +34,6 @@ import qualified Language.Haskell.LSP.Types.Lens as LSP
 import qualified Language.Haskell.LSP.Utility as LSP
 import           Language.Incremental.Visualise
 import           Options.Applicative
--- import           Repetitive3
 import           System.Exit
 import qualified System.Log.Logger as L
 import           System.Posix.Process
@@ -111,14 +112,24 @@ newtype ReactorInput =
                                    -- callback handlers
 
 -- | The monad used in the reactor
-type R c a = ReaderT (LSP.Core.LspFuncs c) IO a
+type R a = ReaderT REnv IO a
+
+runR :: REnv -> R a -> IO a
+runR lf r = runReaderT r lf
+
+data REnv = REnv
+  { lspFuncs         :: LSP.Core.LspFuncs ()
+  , documentVersions :: STM.TVar (Map.Map LSP.Uri Int)
+  }
+
 
 -- | The single point that all events flow through, allowing management of state
 -- to stitch replies and requests together from the two asynchronous sides: lsp
 -- server and backend compiler
 reactor :: LSP.Core.LspFuncs () -> TChan ReactorInput -> IO ()
-reactor lf inp =
-   flip runReaderT lf $ forever $ do
+reactor lf inp = do
+   versionTVar <- STM.atomically $ STM.newTVar Map.empty
+   runR (REnv lf versionTVar) $ forever $ do
        inval <- liftIO $ atomically $ readTChan inp
        case inval of
            HandlerRequest (RspFromClient rm) ->
@@ -197,8 +208,14 @@ reactor lf inp =
              txt <- case mf of
                Nothing -> error $ "ReqHover: no valid file for:" ++ show uri
                Just (LSP.VirtualFile v yitext) -> return $ Yi.toString yitext
+             let
+               tree = parseTree txt
+               im = asLocMap tree
+               st = getArtifactsAtPos pos im
+               mh = case st of
+                 [] -> Nothing
+                 (r,detail):_ -> Just (LSP.Hover (LSP.List [LSP.PlainString detail]) (Just r))
 
-             let mh = Nothing
              reactorSend $ RspHover
                          $ LSP.Core.makeResponseMessage req mh
 
@@ -216,9 +233,9 @@ reqToURI req =
     LSP.textDocument .
     LSP.uri
 
-reactorSend :: FromServerMessage -> R () ()
+reactorSend :: FromServerMessage -> R ()
 reactorSend msg = do
-  lf <- ask
+  lf <- asks lspFuncs
   liftIO $ LSP.Core.sendFunc lf msg
 
 lspOptions :: LSP.Core.Options
