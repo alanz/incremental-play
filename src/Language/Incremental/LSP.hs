@@ -32,7 +32,7 @@ import qualified Language.Haskell.LSP.Types.Lens as LSP
 import qualified Language.Haskell.LSP.Utility as LSP
 import           Language.Incremental.Visualise
 import           Options.Applicative
-import           Repetitive3
+-- import           Repetitive3
 import           System.Exit
 import qualified System.Log.Logger as L
 import           System.Posix.Process
@@ -41,8 +41,6 @@ import qualified Language.Haskell.LSP.VFS as LSP
 import qualified Yi.Rope as Yi
 
 -- ---------------------------------------------------------------------
-
-
 
 data CommandLineOptions
    = CommandLineOptions
@@ -56,7 +54,7 @@ commandLineOptionsParser = CommandLineOptions
        ( long "server-log-file"
        <> metavar "FILENAME"
        <> help "Log file used for general server logging"
-       <> value "/tmp/inc-lsp.log"
+       <> value "/tmp/inc-lsp-1.log"
        )
    <*> strOption
        ( long "session-log-file"
@@ -71,6 +69,8 @@ commandLineOptions _ = info (commandLineOptionsParser <**> helper)
    <> header "inc-lsp"
    <> progDesc "A Language Server Protocol Implementation for experimental incremental parsers"
    )
+
+-- ---------------------------------------------------------------------
 
 main :: IO ()
 main = do
@@ -88,8 +88,8 @@ run opts dispatcherProc = flip Exception.catches handlers $ do
            dispatcherProc
            return Nothing
    flip Exception.finally L.removeAllHandlers $ do
-       -- LSP.Core.setupLogger (Just (serverLogFile opts)) [] L.DEBUG
-       LSP.Core.setupLogger Nothing [] L.DEBUG
+       LSP.Core.setupLogger (Just (serverLogFile opts)) ["hie"] L.DEBUG
+       -- LSP.Core.setupLogger Nothing [] L.DEBUG
        LSP.Control.run
            (return (Right ()), dp)
            (lspHandlers rin)
@@ -148,14 +148,19 @@ reactor lf inp =
 
                vfsFunc = LSP.Core.getVirtualFileFunc lf
 
+             liftIO $ LSP.logs $ "reactor:DocumentSymbolRequest:uri=" ++ show uri
+
              mf <- liftIO $ vfsFunc uri
+             liftIO $ LSP.logs $ "reactor:DocumentSymbolRequest:mf=" ++ show mf
              txt <- case mf of
                Nothing -> error $ "ReqDocumentSymbols: no valid file for:" ++ show uri
-               Just (LSP.VirtualFile v yitext) -> return $ Yi.toString yitext
+               Just (LSP.VirtualFile _v yitext) -> return $ Yi.toString yitext
 
+             liftIO $ LSP.logs $ "reactor:DocumentSymbolRequest:txt=[" ++ show txt ++ "]"
              let
                -- syms = asHierarchy "a BbDd c"
                syms = asHierarchy txt
+             liftIO $ LSP.logs $ "reactor:DocumentSymbolRequest:syms=" ++ show syms
              {-
   DocumentSymbol
     { _name           :: Text -- ^ The name of this symbol.

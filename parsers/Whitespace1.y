@@ -54,7 +54,7 @@ tree : Root { $1 }
 
 -- -------------------------------------
 
-Root : Am Bs C { Root $2 }
+Root : Am Bs Cm { Root $2 }
 
 Am :: { (Conn (TokenL TokenType)) }
    : conn(A)      { $1 }
@@ -73,8 +73,10 @@ B :: { B }
   | 'd'            { Bd }
   | 'D'            { BD }
 
-C : 'c'           { () }
-  | {- nothing -} { () }
+Cm :: { (Conn (TokenL TokenType)) }
+   : conn(C)      { $1 }
+
+C : 'c'           { $1 }
 
 -- Rules to introduce a branching tree instead of linearity
 -- See "Parameterized Productions" in

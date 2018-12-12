@@ -10,7 +10,6 @@ module Language.Incremental.Visualise
  ) where
 
 import           Data.Foldable
-import           Data.List
 import qualified Data.Text as T
 import           Data.Tree
 import qualified Language.Haskell.LSP.Types as LSP
@@ -41,6 +40,7 @@ data Pos = Pos { line :: Int
 instance Show Pos where
   show (Pos f t) = parens $ unwords ["Pos",show f,show t]
 
+parens :: String -> String
 parens str = "(" ++ str ++ ")"
 
 -- ---------------------------------------------------------------------
@@ -125,7 +125,7 @@ pp t = head $ go (Span (Pos 0 0) (Pos 0 0)) [t]
   where
     go :: Span -> [Tree (String,[Tok])] -> [Tree Bar]
     go _ [] = []
-    go sp@(Span (Pos sl _s) (Pos el e)) (Node i []:tts) = Node b []:go (bSpan b) tts
+    go sp (Node i []:tts) = Node b []:go (bSpan b) tts
       where
         b = (ff sp i)
     go sp (Node i ts:tts) = r:go sp' tts
@@ -142,14 +142,11 @@ pp t = head $ go (Span (Pos 0 0) (Pos 0 0)) [t]
     -- Given a starting span, advance to calculate a Span
     -- corresponding to the given tokens
     ff :: Span -> (String,[Tok]) -> Bar
-    ff (Span _start end@(Pos endl endc)) (s,ts) = Bar s ts len sp
+    ff (Span _start end) (s,ts) = Bar s ts len sp
       where
-        len = length ts
-        -- sp = Span (Pos endl endc) (Pos endl (endc + len))
-        sp = Span start' end'
-        -- start' = Pos endl (endc+1)
-        start' = Pos endl endc
-        end' = go1 end ts
+        len    = length ts
+        sp     = Span end end'
+        end'   = go1 end ts
 
         go1 pos [] = pos
         go1 pos (Tok _ t':ts') = go1 (advance pos t') ts'
